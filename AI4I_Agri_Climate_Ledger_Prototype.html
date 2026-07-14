@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agri-Climate Ledger — AI4I Design Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F0F3EC;
+    --surface: #FFFFFF;
+    --ink: #1B2A20;
+    --ink-soft: #4B5A50;
+    --pine: #1F3D2B;
+    --pine-2: #2E5A3E;
+    --amber: #8F600F;
+    --amber-bg: #FCEFD7;
+    --rust: #8E2F22;
+    --rust-bg: #FBE4DF;
+    --sage: #386148;
+    --sage-bg: #E1EEE3;
+    --line: #D7DDD1;
+    --focus: #14532D;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.5;
+    min-width:320px;
+  }
+  ::selection{background:var(--sage-bg);}
+  a{color:var(--pine-2);}
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0; color:var(--pine);}
+  .mono{font-family:'IBM Plex Mono',monospace; font-variant-numeric: tabular-nums;}
+  button, select{font-family:inherit;}
+  button:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:2px;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    background:var(--pine);
+    color:#F3F6EF;
+    padding: 22px clamp(16px,4vw,48px);
+    background-image:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 26px);
+  }
+  .masthead-inner{
+    max-width:1240px; margin:0 auto;
+    display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    color:#B9CDBB; margin:0 0 6px 0;
+  }
+  .masthead h1{color:#fff; font-size:clamp(24px,3.4vw,34px); line-height:1.15;}
+  .masthead p.sub{margin:6px 0 0; color:#D7E4D3; font-size:14.5px; max-width:52ch;}
+  .month-badge{
+    font-family:'IBM Plex Mono',monospace;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25);
+    padding:8px 14px; border-radius:999px; font-size:13px; color:#EAF1E7;
+    white-space:nowrap;
+  }
+
+  /* ---------- Persona switcher ---------- */
+  .persona-bar{
+    background:var(--pine-2); padding:10px clamp(16px,4vw,48px);
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .persona-bar-inner{max-width:1240px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .persona-label{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:#CFE0CC;
+    letter-spacing:.06em; text-transform:uppercase; margin-right:4px;
+  }
+  .persona-btn{
+    min-height:44px; min-width:44px;
+    padding:8px 16px;
+    border-radius:999px; border:1px solid rgba(255,255,255,0.35);
+    background:transparent; color:#EAF1E7;
+    font-size:14px; font-weight:600; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .persona-btn[aria-pressed="true"]{
+    background:#EAF1E7; color:var(--pine); border-color:#EAF1E7;
+  }
+  .persona-btn:hover{background:rgba(255,255,255,0.18);}
+  .persona-btn[aria-pressed="true"]:hover{background:#fff;}
+
+  main{max-width:1240px; margin:0 auto; padding: 28px clamp(16px,4vw,48px) 80px;}
+
+  section{margin-top:44px;}
+  section:first-of-type{margin-top:32px;}
+  .section-head{display:flex; align-items:baseline; gap:14px; margin-bottom:16px; border-bottom:2px solid var(--line); padding-bottom:10px;}
+  .section-num{font-family:'IBM Plex Mono',monospace; color:var(--sage); font-size:13px; font-weight:600;}
+  .section-head h2{font-size:clamp(19px,2.4vw,24px);}
+  .section-desc{color:var(--ink-soft); font-size:14.5px; margin:6px 0 20px; max-width:70ch;}
+
+  /* ---------- KPI Ledger ---------- */
+  .kpi-grid{
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+  }
+  .kpi-card{
+    background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--sage);
+    border-radius:var(--radius); padding:16px 18px;
+  }
+  .kpi-card.warn{border-left-color:var(--amber);}
+  .kpi-card.alert{border-left-color:var(--rust);}
+  .kpi-label{font-size:12.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; font-weight:600;}
+  .kpi-value{font-family:'IBM Plex Mono',monospace; font-size:clamp(26px,3.2vw,32px); font-weight:600; color:var(--pine); margin-top:4px;}
+  .kpi-delta{font-size:13px; margin-top:6px; color:var(--ink-soft);}
+  .kpi-delta.up{color:var(--rust);}
+  .kpi-delta.down{color:var(--sage);}
+
+  /* ---------- Filters ---------- */
+  .filter-bar{
+    display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:20px;
+  }
+  .filter-field{display:flex; flex-direction:column; gap:6px; min-width:150px;}
+  .filter-field label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .filter-field select{
+    min-height:44px; border-radius:8px; border:1px solid var(--line);
+    padding:8px 10px; font-size:14.5px; background:#fff; color:var(--ink);
+  }
+  .reset-btn{
+    min-height:44px; padding:8px 18px; border-radius:8px; border:1px solid var(--pine);
+    background:#fff; color:var(--pine); font-weight:600; cursor:pointer; font-size:14px;
+  }
+  .reset-btn:hover{background:var(--sage-bg);}
+
+  /* ---------- Layout: chart + heatmap ---------- */
+  .explore-grid{display:grid; grid-template-columns: 1.15fr 1fr; gap:20px;}
+  @media (max-width:860px){ .explore-grid{grid-template-columns:1fr;} }
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .panel h3{font-size:15.5px; margin-bottom:4px;}
+  .panel .panel-note{font-size:12.5px; color:var(--ink-soft); margin-bottom:12px;}
+  .chart-wrap{position:relative; height:260px;}
+
+  .district-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px;
+    max-height:320px; overflow-y:auto; padding-right:4px;
+  }
+  .district-tile{
+    border-radius:8px; padding:9px 8px; min-height:64px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    border:1px solid var(--line); cursor:default;
+  }
+  .district-tile .d-name{font-size:11.5px; font-weight:700; line-height:1.2;}
+  .district-tile .d-risk{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600;}
+  .tile-low{background:var(--sage-bg); border-color:#BFDCC4;}
+  .tile-medium{background:var(--amber-bg); border-color:#F0D49C;}
+  .tile-high{background:var(--rust-bg); border-color:#F0C1B7;}
+
+  /* ---------- Insights ---------- */
+  .insight-list{display:flex; flex-direction:column; gap:10px;}
+  .insight-card{
+    display:flex; gap:12px; padding:14px 16px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--surface); align-items:flex-start;
+  }
+  .insight-icon{
+    flex:0 0 auto; width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:#fff;
+  }
+  .insight-icon.high{background:var(--rust);}
+  .insight-icon.medium{background:var(--amber);}
+  .insight-icon.info{background:var(--sage);}
+  .insight-body p{margin:0; font-size:14.5px; color:var(--ink);}
+  .insight-body .insight-tag{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:700; margin-bottom:3px;}
+
+  /* ---------- Actions ---------- */
+  .action-panel{
+    background:var(--pine); color:#F2F6EF; border-radius:var(--radius);
+    padding:22px clamp(16px,3vw,28px);
+  }
+  .action-panel h3{color:#fff; font-size:17px; margin-bottom:4px;}
+  .action-panel .for-persona{font-family:'IBM Plex Mono',monospace; font-size:12px; color:#B9CDBB; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px;}
+  .action-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px;}
+  .action-list li{
+    display:flex; gap:12px; align-items:flex-start; font-size:14.5px; line-height:1.5;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.15);
+  }
+  .action-list li:last-child{border-bottom:none; padding-bottom:0;}
+  .action-num{font-family:'IBM Plex Mono',monospace; color:#CFE0CC; font-weight:700; flex:0 0 auto;}
+
+  footer{
+    max-width:1240px; margin:0 auto; padding:0 clamp(16px,4vw,48px) 40px;
+    color:var(--ink-soft); font-size:12.5px;
+  }
+  footer .sr-note{margin-top:6px;}
+
+  .visually-hidden{
+    position:absolute; width:1px;height:1px; margin:-1px; padding:0; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  @media (max-width:480px){
+    .kpi-grid{grid-template-columns:1fr 1fr;}
+    .filter-bar{flex-direction:column; align-items:stretch;}
+    .filter-field{min-width:0;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <p class="eyebrow">POTRAZ AI4I Challenge · Design Track · Track 2</p>
+      <h1>Agri‑Climate Ledger</h1>
+      <p class="sub">A district‑level record of rainfall, crop risk and farmgate prices — built for the people who act on it, not just report it.</p>
+    </div>
+    <span class="month-badge mono" id="monthBadge">Jan – Jun 2026</span>
+  </div>
+</header>
+
+<nav class="persona-bar" aria-label="Choose your role">
+  <div class="persona-bar-inner">
+    <span class="persona-label">I am a:</span>
+    <button class="persona-btn" data-persona="extension" aria-pressed="true">Extension Officer</button>
+    <button class="persona-btn" data-persona="association" aria-pressed="false">Farmer Association Lead</button>
+    <button class="persona-btn" data-persona="planner" aria-pressed="false">Food Security Planner</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- 1. OVERVIEW -->
+  <section aria-labelledby="overview-h">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 id="overview-h">Overview</h2>
+    </div>
+    <p class="section-desc" id="overviewDesc">High-level picture across the filtered records. Numbers update as you narrow the view below.</p>
+    <div class="kpi-grid" id="kpiGrid" role="list"></div>
+  </section>
+
+  <!-- 2. DATA EXPLORATION -->
+  <section aria-labelledby="explore-h">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 id="explore-h">Data Exploration</h2>
+    </div>
+    <p class="section-desc">Filter by province, crop, month or risk band. The chart and district ledger below respond immediately.</p>
+
+    <form class="filter-bar" id="filterForm">
+      <div class="filter-field">
+        <label for="fProvince">Province</label>
+        <select id="fProvince"><option value="">All provinces</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="fCrop">Crop</label>
+        <select id="fCrop"><option value="">All crops</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="fMonth">Month</label>
+        <select id="fMonth"><option value="">All months</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="fRisk">Risk band</label>
+        <select id="fRisk">
+          <option value="">All risk bands</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <button type="button" class="reset-btn" id="resetFilters">Reset filters</button>
+    </form>
+
+    <div class="explore-grid">
+      <div class="panel">
+        <h3>Rainfall vs. climate‑crop risk over time</h3>
+        <p class="panel-note">Average monthly rainfall (mm) against the composite climate‑crop risk score (0–100) for the current filter.</p>
+        <div class="chart-wrap">
+          <canvas id="trendChart" role="img" aria-label="Line chart comparing average monthly rainfall in millimetres against the average climate crop risk score from 0 to 100, for the months and filters currently selected. A written summary of the same trend is available directly below the chart."></canvas>
+        </div>
+        <p class="visually-hidden" id="trendChartAlt"></p>
+      </div>
+      <div class="panel">
+        <h3>Districts requiring attention</h3>
+        <p class="panel-note">Each tile is one district, shaded by its average risk band for the current filter. Darker red = higher risk.</p>
+        <div class="district-grid" id="districtGrid" role="list" aria-label="District risk ledger"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. KEY INSIGHTS -->
+  <section aria-labelledby="insights-h">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 id="insights-h">Key Insights</h2>
+    </div>
+    <p class="section-desc">Automatically surfaced from the current filter — the districts and signals furthest from the norm.</p>
+    <div class="insight-list" id="insightList"></div>
+  </section>
+
+  <!-- 4. RECOMMENDED ACTIONS -->
+  <section aria-labelledby="actions-h">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2 id="actions-h">Recommended Actions</h2>
+    </div>
+    <div class="action-panel">
+      <h3 id="actions-persona-title">For: Agricultural Extension Officer</h3>
+      <p class="for-persona" id="actions-persona-sub">Prioritising field visits and farmer advisories</p>
+      <ol class="action-list" id="actionList"></ol>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Data: synthetic aggregate sample pack provided for AI4I Design Track challenge use — not official statistics. 360 records, 20 districts, 6 crops, Jan–Jun 2026.</p>
+  <p class="sr-note">This page targets WCAG 2.1 AA: 4.5:1 text contrast, 44×44px touch targets, full keyboard navigation, and text alternatives for all charts.</p>
+</footer>
+
+<script>
+const RAW_DATA = [{"month":"2026-01","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sunflower","rainfall":119.2,"ndvi":0.71,"pest":15,"irrigation":37.7,"inputAvail":84.0,"price":585.31,"yield":1.94,"risk":17.2,"riskLevel":"Low"},{"month":"2026-01","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sugar beans","rainfall":76.8,"ndvi":0.45,"pest":9,"irrigation":46.8,"inputAvail":89.8,"price":1184.45,"yield":0.97,"risk":33.4,"riskLevel":"Low"},{"month":"2026-01","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sorghum","rainfall":90.4,"ndvi":0.54,"pest":3,"irrigation":46.5,"inputAvail":61.9,"price":251.51,"yield":1.26,"risk":30.6,"riskLevel":"Low"},{"month":"2026-01","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sorghum","rainfall":127.5,"ndvi":0.74,"pest":1,"irrigation":37.6,"inputAvail":84.2,"price":263.41,"yield":2.24,"risk":9.5,"riskLevel":"Low"},{"month":"2026-01","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Groundnuts","rainfall":123.5,"ndvi":0.76,"pest":0,"irrigation":48.1,"inputAvail":44.7,"price":731.98,"yield":1.59,"risk":5.0,"riskLevel":"Low"},{"month":"2026-01","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sugar beans","rainfall":108.0,"ndvi":0.66,"pest":3,"irrigation":58.6,"inputAvail":62.2,"price":1111.8,"yield":1.26,"risk":7.6,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sunflower","rainfall":87.9,"ndvi":0.47,"pest":9,"irrigation":60.3,"inputAvail":95.0,"price":616.41,"yield":1.82,"risk":24.6,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Groundnuts","rainfall":96.0,"ndvi":0.52,"pest":10,"irrigation":37.2,"inputAvail":49.9,"price":973.93,"yield":0.98,"risk":33.9,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Tomatoes","rainfall":34.9,"ndvi":0.37,"pest":6,"irrigation":32.6,"inputAvail":52.6,"price":502.51,"yield":16.94,"risk":43.0,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sunflower","rainfall":97.2,"ndvi":0.55,"pest":2,"irrigation":51.4,"inputAvail":56.0,"price":615.65,"yield":1.78,"risk":22.7,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Groundnuts","rainfall":135.5,"ndvi":0.71,"pest":6,"irrigation":34.2,"inputAvail":35.0,"price":869.35,"yield":1.43,"risk":18.5,"riskLevel":"Low"},{"month":"2026-01","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Maize","rainfall":104.1,"ndvi":0.74,"pest":8,"irrigation":40.6,"inputAvail":92.8,"price":371.62,"yield":3.89,"risk":5.0,"riskLevel":"Low"},{"month":"2026-01","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sunflower","rainfall":111.6,"ndvi":0.59,"pest":4,"irrigation":16.1,"inputAvail":95.0,"price":569.1,"yield":2.14,"risk":20.9,"riskLevel":"Low"},{"month":"2026-01","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sugar beans","rainfall":96.7,"ndvi":0.68,"pest":7,"irrigation":40.8,"inputAvail":55.5,"price":1143.87,"yield":1.35,"risk":20.2,"riskLevel":"Low"},{"month":"2026-01","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Tomatoes","rainfall":133.2,"ndvi":0.68,"pest":7,"irrigation":29.9,"inputAvail":58.0,"price":495.13,"yield":14.64,"risk":21.8,"riskLevel":"Low"},{"month":"2026-01","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sugar beans","rainfall":49.4,"ndvi":0.44,"pest":14,"irrigation":12.9,"inputAvail":61.5,"price":1110.25,"yield":1.23,"risk":62.6,"riskLevel":"Medium"},{"month":"2026-01","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sorghum","rainfall":112.6,"ndvi":0.64,"pest":14,"irrigation":33.4,"inputAvail":74.0,"price":267.25,"yield":2.04,"risk":29.1,"riskLevel":"Low"},{"month":"2026-01","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Groundnuts","rainfall":118.8,"ndvi":0.61,"pest":10,"irrigation":20.0,"inputAvail":73.6,"price":977.82,"yield":1.39,"risk":29.2,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sunflower","rainfall":129.0,"ndvi":0.74,"pest":12,"irrigation":44.4,"inputAvail":74.1,"price":614.59,"yield":1.69,"risk":18.3,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Tomatoes","rainfall":115.1,"ndvi":0.72,"pest":4,"irrigation":51.9,"inputAvail":54.1,"price":486.83,"yield":15.15,"risk":5.0,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sorghum","rainfall":85.3,"ndvi":0.55,"pest":5,"irrigation":35.5,"inputAvail":51.3,"price":269.88,"yield":1.52,"risk":30.3,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Groundnuts","rainfall":109.6,"ndvi":0.65,"pest":12,"irrigation":22.5,"inputAvail":84.2,"price":870.35,"yield":1.59,"risk":34.6,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Maize","rainfall":110.9,"ndvi":0.66,"pest":7,"irrigation":30.6,"inputAvail":55.3,"price":299.43,"yield":3.85,"risk":14.5,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sunflower","rainfall":97.8,"ndvi":0.75,"pest":5,"irrigation":31.1,"inputAvail":58.7,"price":512.27,"yield":2.01,"risk":16.2,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sugar beans","rainfall":106.0,"ndvi":0.66,"pest":7,"irrigation":41.7,"inputAvail":42.8,"price":1252.59,"yield":1.32,"risk":21.5,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Tomatoes","rainfall":94.8,"ndvi":0.59,"pest":5,"irrigation":23.0,"inputAvail":47.4,"price":592.23,"yield":13.98,"risk":30.9,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Groundnuts","rainfall":109.6,"ndvi":0.52,"pest":6,"irrigation":45.3,"inputAvail":66.3,"price":826.24,"yield":1.01,"risk":30.7,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Tomatoes","rainfall":101.8,"ndvi":0.54,"pest":0,"irrigation":25.7,"inputAvail":73.9,"price":504.95,"yield":14.95,"risk":19.0,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Maize","rainfall":146.7,"ndvi":0.79,"pest":12,"irrigation":35.7,"inputAvail":75.6,"price":375.39,"yield":3.59,"risk":9.2,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Groundnuts","rainfall":87.1,"ndvi":0.56,"pest":7,"irrigation":28.3,"inputAvail":51.0,"price":746.93,"yield":1.15,"risk":28.8,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Maize","rainfall":122.7,"ndvi":0.59,"pest":7,"irrigation":38.0,"inputAvail":66.8,"price":345.8,"yield":3.22,"risk":28.7,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Groundnuts","rainfall":113.6,"ndvi":0.63,"pest":8,"irrigation":34.8,"inputAvail":72.0,"price":901.73,"yield":1.45,"risk":23.8,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Tomatoes","rainfall":90.6,"ndvi":0.53,"pest":6,"irrigation":45.6,"inputAvail":80.3,"price":615.38,"yield":13.43,"risk":14.6,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Maize","rainfall":153.1,"ndvi":0.79,"pest":9,"irrigation":20.5,"inputAvail":84.6,"price":361.61,"yield":3.8,"risk":19.8,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sorghum","rainfall":132.3,"ndvi":0.75,"pest":3,"irrigation":2.0,"inputAvail":85.9,"price":271.72,"yield":1.84,"risk":9.9,"riskLevel":"Low"},{"month":"2026-01","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Tomatoes","rainfall":90.4,"ndvi":0.49,"pest":9,"irrigation":25.4,"inputAvail":72.9,"price":522.67,"yield":13.55,"risk":44.0,"riskLevel":"Low"},{"month":"2026-01","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Groundnuts","rainfall":102.4,"ndvi":0.63,"pest":10,"irrigation":20.2,"inputAvail":48.5,"price":880.82,"yield":1.3,"risk":25.9,"riskLevel":"Low"},{"month":"2026-01","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sorghum","rainfall":61.2,"ndvi":0.41,"pest":9,"irrigation":12.2,"inputAvail":60.0,"price":282.76,"yield":1.38,"risk":61.1,"riskLevel":"Medium"},{"month":"2026-01","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sunflower","rainfall":44.9,"ndvi":0.35,"pest":7,"irrigation":30.0,"inputAvail":66.9,"price":623.53,"yield":1.34,"risk":43.2,"riskLevel":"Low"},{"month":"2026-01","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sugar beans","rainfall":54.8,"ndvi":0.36,"pest":11,"irrigation":27.8,"inputAvail":74.4,"price":1122.48,"yield":0.84,"risk":58.7,"riskLevel":"Medium"},{"month":"2026-01","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sorghum","rainfall":28.4,"ndvi":0.37,"pest":5,"irrigation":8.4,"inputAvail":59.9,"price":336.28,"yield":1.31,"risk":46.7,"riskLevel":"Medium"},{"month":"2026-01","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Tomatoes","rainfall":49.5,"ndvi":0.43,"pest":6,"irrigation":16.2,"inputAvail":67.1,"price":583.93,"yield":14.63,"risk":44.4,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sunflower","rainfall":49.4,"ndvi":0.36,"pest":6,"irrigation":31.3,"inputAvail":59.9,"price":559.34,"yield":1.61,"risk":35.4,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Tomatoes","rainfall":58.6,"ndvi":0.47,"pest":9,"irrigation":4.8,"inputAvail":46.8,"price":542.92,"yield":15.54,"risk":43.8,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sugar beans","rainfall":70.4,"ndvi":0.49,"pest":5,"irrigation":23.3,"inputAvail":35.1,"price":1182.75,"yield":1.18,"risk":28.7,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Groundnuts","rainfall":95.4,"ndvi":0.62,"pest":9,"irrigation":35.7,"inputAvail":47.3,"price":931.86,"yield":1.37,"risk":22.9,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Maize","rainfall":70.7,"ndvi":0.48,"pest":5,"irrigation":8.6,"inputAvail":62.2,"price":321.19,"yield":2.32,"risk":24.6,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sugar beans","rainfall":69.3,"ndvi":0.38,"pest":5,"irrigation":17.6,"inputAvail":65.4,"price":1308.8,"yield":1.15,"risk":38.8,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Tomatoes","rainfall":30.0,"ndvi":0.33,"pest":8,"irrigation":14.1,"inputAvail":81.6,"price":479.16,"yield":11.5,"risk":44.3,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sunflower","rainfall":45.0,"ndvi":0.34,"pest":6,"irrigation":32.7,"inputAvail":50.5,"price":526.31,"yield":1.51,"risk":53.2,"riskLevel":"Medium"},{"month":"2026-01","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Groundnuts","rainfall":80.9,"ndvi":0.67,"pest":18,"irrigation":30.5,"inputAvail":34.5,"price":879.43,"yield":1.23,"risk":41.5,"riskLevel":"Low"},{"month":"2026-01","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sunflower","rainfall":21.4,"ndvi":0.38,"pest":14,"irrigation":39.7,"inputAvail":36.3,"price":639.96,"yield":1.6,"risk":68.5,"riskLevel":"Medium"},{"month":"2026-01","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Tomatoes","rainfall":25.8,"ndvi":0.36,"pest":13,"irrigation":24.5,"inputAvail":64.6,"price":540.11,"yield":10.83,"risk":63.0,"riskLevel":"Medium"},{"month":"2026-01","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sorghum","rainfall":36.3,"ndvi":0.37,"pest":6,"irrigation":31.7,"inputAvail":66.6,"price":252.51,"yield":1.27,"risk":45.1,"riskLevel":"Medium"},{"month":"2026-01","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sorghum","rainfall":122.4,"ndvi":0.69,"pest":9,"irrigation":41.9,"inputAvail":45.6,"price":291.1,"yield":1.78,"risk":24.0,"riskLevel":"Low"},{"month":"2026-01","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Tomatoes","rainfall":101.0,"ndvi":0.68,"pest":1,"irrigation":43.0,"inputAvail":76.9,"price":591.14,"yield":14.78,"risk":6.0,"riskLevel":"Low"},{"month":"2026-01","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Groundnuts","rainfall":82.5,"ndvi":0.53,"pest":13,"irrigation":53.0,"inputAvail":82.2,"price":724.26,"yield":1.02,"risk":30.1,"riskLevel":"Low"},{"month":"2026-01","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Groundnuts","rainfall":126.7,"ndvi":0.61,"pest":7,"irrigation":38.7,"inputAvail":80.5,"price":974.38,"yield":1.62,"risk":34.1,"riskLevel":"Low"},{"month":"2026-01","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Tomatoes","rainfall":104.4,"ndvi":0.57,"pest":12,"irrigation":26.3,"inputAvail":61.7,"price":530.45,"yield":17.1,"risk":37.7,"riskLevel":"Low"},{"month":"2026-01","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sunflower","rainfall":90.9,"ndvi":0.56,"pest":3,"irrigation":48.4,"inputAvail":40.0,"price":556.72,"yield":1.72,"risk":20.1,"riskLevel":"Low"},{"month":"2026-02","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sorghum","rainfall":102.6,"ndvi":0.66,"pest":12,"irrigation":41.9,"inputAvail":38.7,"price":287.08,"yield":1.92,"risk":24.0,"riskLevel":"Low"},{"month":"2026-02","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Groundnuts","rainfall":56.7,"ndvi":0.38,"pest":14,"irrigation":41.8,"inputAvail":64.2,"price":782.07,"yield":1.32,"risk":44.8,"riskLevel":"Low"},{"month":"2026-02","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Tomatoes","rainfall":102.3,"ndvi":0.6,"pest":17,"irrigation":35.6,"inputAvail":53.2,"price":575.86,"yield":19.59,"risk":56.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sugar beans","rainfall":128.5,"ndvi":0.63,"pest":14,"irrigation":42.2,"inputAvail":51.1,"price":1327.97,"yield":1.12,"risk":39.2,"riskLevel":"Low"},{"month":"2026-02","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sorghum","rainfall":51.2,"ndvi":0.36,"pest":6,"irrigation":50.0,"inputAvail":49.0,"price":268.5,"yield":1.3,"risk":51.4,"riskLevel":"Medium"},{"month":"2026-02","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Maize","rainfall":74.5,"ndvi":0.43,"pest":2,"irrigation":30.5,"inputAvail":69.6,"price":317.79,"yield":3.05,"risk":12.4,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sunflower","rainfall":96.3,"ndvi":0.59,"pest":15,"irrigation":43.1,"inputAvail":56.4,"price":630.53,"yield":2.13,"risk":27.3,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Maize","rainfall":88.7,"ndvi":0.55,"pest":8,"irrigation":32.4,"inputAvail":78.5,"price":364.77,"yield":3.28,"risk":35.0,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sugar beans","rainfall":83.1,"ndvi":0.53,"pest":14,"irrigation":49.4,"inputAvail":69.1,"price":1204.42,"yield":0.9,"risk":43.9,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sugar beans","rainfall":116.0,"ndvi":0.73,"pest":17,"irrigation":39.1,"inputAvail":67.9,"price":1039.63,"yield":1.05,"risk":20.7,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sunflower","rainfall":77.5,"ndvi":0.53,"pest":6,"irrigation":38.5,"inputAvail":27.8,"price":653.61,"yield":1.63,"risk":20.6,"riskLevel":"Low"},{"month":"2026-02","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sorghum","rainfall":49.6,"ndvi":0.38,"pest":11,"irrigation":38.0,"inputAvail":62.9,"price":292.58,"yield":1.71,"risk":43.2,"riskLevel":"Low"},{"month":"2026-02","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sunflower","rainfall":66.8,"ndvi":0.54,"pest":10,"irrigation":53.1,"inputAvail":46.2,"price":543.79,"yield":1.92,"risk":26.8,"riskLevel":"Low"},{"month":"2026-02","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sugar beans","rainfall":88.5,"ndvi":0.58,"pest":13,"irrigation":36.7,"inputAvail":45.4,"price":1132.91,"yield":1.44,"risk":33.2,"riskLevel":"Low"},{"month":"2026-02","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Maize","rainfall":93.1,"ndvi":0.57,"pest":5,"irrigation":35.6,"inputAvail":71.5,"price":343.03,"yield":3.44,"risk":37.1,"riskLevel":"Low"},{"month":"2026-02","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Tomatoes","rainfall":56.0,"ndvi":0.43,"pest":15,"irrigation":10.8,"inputAvail":71.5,"price":628.69,"yield":15.64,"risk":57.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sunflower","rainfall":102.9,"ndvi":0.67,"pest":7,"irrigation":18.8,"inputAvail":42.3,"price":613.21,"yield":1.75,"risk":32.6,"riskLevel":"Low"},{"month":"2026-02","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sugar beans","rainfall":68.4,"ndvi":0.48,"pest":23,"irrigation":25.4,"inputAvail":58.9,"price":1244.27,"yield":1.3,"risk":67.6,"riskLevel":"Medium"},{"month":"2026-02","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Maize","rainfall":102.2,"ndvi":0.7,"pest":4,"irrigation":28.9,"inputAvail":70.3,"price":283.62,"yield":3.33,"risk":5.0,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sunflower","rainfall":68.8,"ndvi":0.51,"pest":5,"irrigation":60.8,"inputAvail":70.5,"price":509.6,"yield":1.64,"risk":19.9,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Tomatoes","rainfall":50.8,"ndvi":0.4,"pest":22,"irrigation":46.8,"inputAvail":40.5,"price":565.47,"yield":15.56,"risk":68.5,"riskLevel":"Medium"},{"month":"2026-02","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Tomatoes","rainfall":106.2,"ndvi":0.6,"pest":11,"irrigation":30.4,"inputAvail":70.2,"price":520.5,"yield":20.42,"risk":31.5,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sunflower","rainfall":137.4,"ndvi":0.71,"pest":6,"irrigation":26.4,"inputAvail":57.9,"price":621.92,"yield":2.18,"risk":12.0,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Groundnuts","rainfall":107.0,"ndvi":0.7,"pest":5,"irrigation":24.2,"inputAvail":91.4,"price":984.29,"yield":1.18,"risk":11.9,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sugar beans","rainfall":58.9,"ndvi":0.51,"pest":15,"irrigation":49.2,"inputAvail":67.0,"price":1180.34,"yield":1.06,"risk":44.6,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Maize","rainfall":72.0,"ndvi":0.47,"pest":9,"irrigation":30.5,"inputAvail":84.2,"price":370.42,"yield":3.07,"risk":26.9,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sunflower","rainfall":100.3,"ndvi":0.58,"pest":5,"irrigation":50.7,"inputAvail":59.0,"price":668.62,"yield":1.82,"risk":12.0,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sunflower","rainfall":52.6,"ndvi":0.31,"pest":3,"irrigation":30.6,"inputAvail":63.9,"price":634.56,"yield":1.31,"risk":36.0,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sorghum","rainfall":48.6,"ndvi":0.36,"pest":10,"irrigation":37.5,"inputAvail":35.5,"price":252.51,"yield":1.32,"risk":46.2,"riskLevel":"Medium"},{"month":"2026-02","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Maize","rainfall":92.6,"ndvi":0.48,"pest":7,"irrigation":10.6,"inputAvail":89.2,"price":328.39,"yield":2.95,"risk":37.3,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Groundnuts","rainfall":95.8,"ndvi":0.53,"pest":1,"irrigation":51.9,"inputAvail":73.7,"price":730.47,"yield":1.19,"risk":7.4,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sorghum","rainfall":103.2,"ndvi":0.64,"pest":5,"irrigation":42.2,"inputAvail":66.7,"price":317.87,"yield":1.74,"risk":6.2,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Tomatoes","rainfall":107.5,"ndvi":0.66,"pest":14,"irrigation":31.5,"inputAvail":61.1,"price":597.68,"yield":15.77,"risk":37.7,"riskLevel":"Low"},{"month":"2026-02","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Maize","rainfall":73.2,"ndvi":0.5,"pest":6,"irrigation":5.1,"inputAvail":53.6,"price":350.17,"yield":3.6,"risk":48.7,"riskLevel":"Medium"},{"month":"2026-02","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Groundnuts","rainfall":47.5,"ndvi":0.45,"pest":14,"irrigation":27.6,"inputAvail":60.3,"price":926.22,"yield":1.42,"risk":47.0,"riskLevel":"Medium"},{"month":"2026-02","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sugar beans","rainfall":56.5,"ndvi":0.45,"pest":10,"irrigation":37.7,"inputAvail":31.1,"price":1009.46,"yield":0.88,"risk":40.4,"riskLevel":"Low"},{"month":"2026-02","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Groundnuts","rainfall":49.5,"ndvi":0.38,"pest":10,"irrigation":22.0,"inputAvail":58.6,"price":774.8,"yield":0.88,"risk":60.5,"riskLevel":"Medium"},{"month":"2026-02","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Maize","rainfall":60.3,"ndvi":0.42,"pest":8,"irrigation":33.4,"inputAvail":69.6,"price":271.82,"yield":2.96,"risk":31.8,"riskLevel":"Low"},{"month":"2026-02","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sugar beans","rainfall":33.4,"ndvi":0.33,"pest":13,"irrigation":18.8,"inputAvail":68.7,"price":1265.98,"yield":0.97,"risk":59.0,"riskLevel":"Medium"},{"month":"2026-02","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sugar beans","rainfall":25.8,"ndvi":0.33,"pest":17,"irrigation":22.6,"inputAvail":42.5,"price":1010.04,"yield":1.04,"risk":63.2,"riskLevel":"Medium"},{"month":"2026-02","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Maize","rainfall":49.4,"ndvi":0.37,"pest":7,"irrigation":7.5,"inputAvail":51.7,"price":352.11,"yield":2.85,"risk":68.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sunflower","rainfall":74.7,"ndvi":0.47,"pest":16,"irrigation":3.8,"inputAvail":76.2,"price":544.47,"yield":1.77,"risk":55.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Tomatoes","rainfall":8.9,"ndvi":0.27,"pest":16,"irrigation":22.0,"inputAvail":46.8,"price":599.42,"yield":10.33,"risk":71.6,"riskLevel":"High"},{"month":"2026-02","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Maize","rainfall":38.6,"ndvi":0.28,"pest":12,"irrigation":36.9,"inputAvail":55.4,"price":375.42,"yield":2.34,"risk":59.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sunflower","rainfall":92.2,"ndvi":0.58,"pest":11,"irrigation":2.0,"inputAvail":50.7,"price":630.94,"yield":1.91,"risk":49.7,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Groundnuts","rainfall":20.8,"ndvi":0.31,"pest":7,"irrigation":20.7,"inputAvail":63.3,"price":917.78,"yield":1.06,"risk":46.5,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Tomatoes","rainfall":24.2,"ndvi":0.28,"pest":16,"irrigation":26.3,"inputAvail":32.7,"price":527.52,"yield":13.83,"risk":56.7,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sunflower","rainfall":65.5,"ndvi":0.54,"pest":10,"irrigation":5.2,"inputAvail":26.6,"price":578.27,"yield":1.49,"risk":42.3,"riskLevel":"Low"},{"month":"2026-02","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sugar beans","rainfall":47.5,"ndvi":0.31,"pest":17,"irrigation":30.6,"inputAvail":46.8,"price":991.85,"yield":1.13,"risk":65.5,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sunflower","rainfall":41.0,"ndvi":0.33,"pest":12,"irrigation":21.6,"inputAvail":95.0,"price":609.38,"yield":1.46,"risk":51.8,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Groundnuts","rainfall":46.1,"ndvi":0.4,"pest":7,"irrigation":42.4,"inputAvail":45.9,"price":917.74,"yield":1.15,"risk":30.8,"riskLevel":"Low"},{"month":"2026-02","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sorghum","rainfall":35.5,"ndvi":0.37,"pest":10,"irrigation":40.8,"inputAvail":74.4,"price":344.86,"yield":1.37,"risk":40.0,"riskLevel":"Low"},{"month":"2026-02","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sugar beans","rainfall":9.5,"ndvi":0.22,"pest":13,"irrigation":30.0,"inputAvail":46.0,"price":1106.51,"yield":0.88,"risk":69.2,"riskLevel":"Medium"},{"month":"2026-02","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sunflower","rainfall":43.2,"ndvi":0.29,"pest":7,"irrigation":20.7,"inputAvail":66.0,"price":620.68,"yield":1.64,"risk":56.1,"riskLevel":"Medium"},{"month":"2026-02","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Tomatoes","rainfall":64.1,"ndvi":0.5,"pest":17,"irrigation":40.4,"inputAvail":78.6,"price":475.48,"yield":17.1,"risk":40.3,"riskLevel":"Low"},{"month":"2026-02","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sugar beans","rainfall":111.3,"ndvi":0.64,"pest":18,"irrigation":17.1,"inputAvail":56.3,"price":1050.77,"yield":1.33,"risk":37.8,"riskLevel":"Low"},{"month":"2026-02","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sorghum","rainfall":59.4,"ndvi":0.5,"pest":13,"irrigation":34.9,"inputAvail":95.0,"price":251.8,"yield":1.27,"risk":29.6,"riskLevel":"Low"},{"month":"2026-02","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Groundnuts","rainfall":69.1,"ndvi":0.6,"pest":5,"irrigation":28.7,"inputAvail":60.1,"price":786.0,"yield":1.63,"risk":18.5,"riskLevel":"Low"},{"month":"2026-02","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sorghum","rainfall":55.4,"ndvi":0.44,"pest":7,"irrigation":23.7,"inputAvail":75.2,"price":325.35,"yield":1.29,"risk":41.8,"riskLevel":"Low"},{"month":"2026-02","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sunflower","rainfall":84.5,"ndvi":0.56,"pest":2,"irrigation":53.6,"inputAvail":48.1,"price":649.42,"yield":1.73,"risk":22.7,"riskLevel":"Low"},{"month":"2026-03","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Tomatoes","rainfall":96.4,"ndvi":0.55,"pest":24,"irrigation":36.5,"inputAvail":60.8,"price":506.03,"yield":18.91,"risk":57.0,"riskLevel":"Medium"},{"month":"2026-03","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sorghum","rainfall":44.7,"ndvi":0.4,"pest":12,"irrigation":35.9,"inputAvail":51.4,"price":314.48,"yield":1.11,"risk":53.2,"riskLevel":"Medium"},{"month":"2026-03","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Groundnuts","rainfall":67.5,"ndvi":0.46,"pest":18,"irrigation":40.2,"inputAvail":49.8,"price":724.5,"yield":1.3,"risk":55.1,"riskLevel":"Medium"},{"month":"2026-03","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Groundnuts","rainfall":67.3,"ndvi":0.38,"pest":9,"irrigation":36.9,"inputAvail":75.4,"price":1010.39,"yield":1.36,"risk":28.2,"riskLevel":"Low"},{"month":"2026-03","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Tomatoes","rainfall":55.5,"ndvi":0.4,"pest":11,"irrigation":50.0,"inputAvail":76.9,"price":585.53,"yield":13.47,"risk":22.7,"riskLevel":"Low"},{"month":"2026-03","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sorghum","rainfall":66.3,"ndvi":0.61,"pest":10,"irrigation":49.3,"inputAvail":48.7,"price":291.67,"yield":1.42,"risk":28.8,"riskLevel":"Low"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sugar beans","rainfall":65.3,"ndvi":0.45,"pest":18,"irrigation":37.2,"inputAvail":54.3,"price":1244.99,"yield":1.03,"risk":53.5,"riskLevel":"Medium"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sunflower","rainfall":52.3,"ndvi":0.38,"pest":3,"irrigation":41.6,"inputAvail":63.5,"price":505.53,"yield":1.73,"risk":31.8,"riskLevel":"Low"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Tomatoes","rainfall":36.6,"ndvi":0.28,"pest":13,"irrigation":41.7,"inputAvail":51.5,"price":488.64,"yield":14.63,"risk":65.3,"riskLevel":"Medium"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Maize","rainfall":67.5,"ndvi":0.41,"pest":7,"irrigation":42.9,"inputAvail":63.5,"price":378.44,"yield":2.5,"risk":32.4,"riskLevel":"Low"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Groundnuts","rainfall":39.5,"ndvi":0.25,"pest":10,"irrigation":36.1,"inputAvail":39.4,"price":941.05,"yield":1.06,"risk":57.5,"riskLevel":"Medium"},{"month":"2026-03","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sunflower","rainfall":70.9,"ndvi":0.54,"pest":13,"irrigation":49.4,"inputAvail":85.5,"price":561.6,"yield":2.03,"risk":31.5,"riskLevel":"Low"},{"month":"2026-03","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Tomatoes","rainfall":75.9,"ndvi":0.48,"pest":18,"irrigation":46.6,"inputAvail":64.5,"price":448.89,"yield":13.79,"risk":62.1,"riskLevel":"Medium"},{"month":"2026-03","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Maize","rainfall":73.1,"ndvi":0.52,"pest":3,"irrigation":30.3,"inputAvail":70.3,"price":274.83,"yield":2.87,"risk":25.8,"riskLevel":"Low"},{"month":"2026-03","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sunflower","rainfall":81.9,"ndvi":0.59,"pest":14,"irrigation":41.5,"inputAvail":75.1,"price":577.29,"yield":1.65,"risk":32.4,"riskLevel":"Low"},{"month":"2026-03","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sugar beans","rainfall":61.5,"ndvi":0.48,"pest":12,"irrigation":42.8,"inputAvail":66.8,"price":1067.36,"yield":1.35,"risk":27.2,"riskLevel":"Low"},{"month":"2026-03","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Maize","rainfall":61.9,"ndvi":0.49,"pest":9,"irrigation":32.6,"inputAvail":95.0,"price":276.72,"yield":2.74,"risk":35.1,"riskLevel":"Low"},{"month":"2026-03","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sorghum","rainfall":41.8,"ndvi":0.29,"pest":6,"irrigation":33.0,"inputAvail":60.1,"price":346.76,"yield":1.41,"risk":47.2,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sunflower","rainfall":56.0,"ndvi":0.44,"pest":2,"irrigation":51.2,"inputAvail":53.8,"price":595.45,"yield":1.43,"risk":21.6,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Maize","rainfall":40.4,"ndvi":0.37,"pest":4,"irrigation":23.9,"inputAvail":50.6,"price":367.72,"yield":2.79,"risk":50.4,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Tomatoes","rainfall":45.3,"ndvi":0.32,"pest":20,"irrigation":35.2,"inputAvail":61.5,"price":455.26,"yield":12.3,"risk":64.1,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Tomatoes","rainfall":61.6,"ndvi":0.49,"pest":18,"irrigation":15.8,"inputAvail":67.5,"price":602.11,"yield":13.37,"risk":55.2,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sugar beans","rainfall":43.4,"ndvi":0.24,"pest":13,"irrigation":20.2,"inputAvail":43.8,"price":1128.68,"yield":1.05,"risk":74.2,"riskLevel":"High"},{"month":"2026-03","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sorghum","rainfall":39.4,"ndvi":0.39,"pest":1,"irrigation":19.6,"inputAvail":76.2,"price":273.82,"yield":1.12,"risk":31.9,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Groundnuts","rainfall":60.0,"ndvi":0.41,"pest":6,"irrigation":42.5,"inputAvail":53.3,"price":860.35,"yield":1.02,"risk":42.2,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Tomatoes","rainfall":75.4,"ndvi":0.45,"pest":15,"irrigation":43.0,"inputAvail":46.9,"price":476.41,"yield":16.67,"risk":40.6,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sunflower","rainfall":56.8,"ndvi":0.38,"pest":14,"irrigation":28.2,"inputAvail":63.4,"price":498.84,"yield":1.54,"risk":44.7,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sorghum","rainfall":46.9,"ndvi":0.34,"pest":6,"irrigation":58.5,"inputAvail":42.5,"price":315.01,"yield":1.24,"risk":47.2,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Groundnuts","rainfall":69.2,"ndvi":0.46,"pest":8,"irrigation":31.0,"inputAvail":66.6,"price":801.63,"yield":1.16,"risk":38.3,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sugar beans","rainfall":59.2,"ndvi":0.44,"pest":20,"irrigation":17.7,"inputAvail":63.3,"price":1304.92,"yield":0.83,"risk":58.4,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Tomatoes","rainfall":64.7,"ndvi":0.47,"pest":10,"irrigation":46.2,"inputAvail":30.9,"price":501.67,"yield":14.69,"risk":42.7,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Groundnuts","rainfall":58.1,"ndvi":0.35,"pest":8,"irrigation":48.4,"inputAvail":58.7,"price":948.81,"yield":0.93,"risk":40.5,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sorghum","rainfall":54.0,"ndvi":0.37,"pest":0,"irrigation":43.7,"inputAvail":55.3,"price":298.1,"yield":1.31,"risk":47.4,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Tomatoes","rainfall":79.8,"ndvi":0.48,"pest":15,"irrigation":24.7,"inputAvail":42.6,"price":458.57,"yield":14.87,"risk":43.6,"riskLevel":"Low"},{"month":"2026-03","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sorghum","rainfall":44.2,"ndvi":0.37,"pest":12,"irrigation":35.9,"inputAvail":57.2,"price":316.98,"yield":1.45,"risk":47.5,"riskLevel":"Medium"},{"month":"2026-03","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sugar beans","rainfall":83.1,"ndvi":0.53,"pest":13,"irrigation":34.9,"inputAvail":71.3,"price":1191.38,"yield":1.01,"risk":41.5,"riskLevel":"Low"},{"month":"2026-03","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sunflower","rainfall":43.6,"ndvi":0.48,"pest":13,"irrigation":21.9,"inputAvail":38.4,"price":673.87,"yield":1.3,"risk":52.8,"riskLevel":"Medium"},{"month":"2026-03","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sorghum","rainfall":32.4,"ndvi":0.36,"pest":6,"irrigation":16.9,"inputAvail":63.1,"price":270.55,"yield":1.37,"risk":47.7,"riskLevel":"Medium"},{"month":"2026-03","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Maize","rainfall":36.9,"ndvi":0.3,"pest":4,"irrigation":30.4,"inputAvail":57.2,"price":293.84,"yield":2.72,"risk":52.1,"riskLevel":"Medium"},{"month":"2026-03","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Groundnuts","rainfall":53.3,"ndvi":0.39,"pest":10,"irrigation":2.0,"inputAvail":73.3,"price":967.93,"yield":0.87,"risk":46.6,"riskLevel":"Medium"},{"month":"2026-03","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sunflower","rainfall":70.5,"ndvi":0.58,"pest":2,"irrigation":28.9,"inputAvail":51.7,"price":625.04,"yield":1.43,"risk":28.2,"riskLevel":"Low"},{"month":"2026-03","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Maize","rainfall":10.5,"ndvi":0.35,"pest":4,"irrigation":23.2,"inputAvail":73.3,"price":362.87,"yield":2.93,"risk":42.6,"riskLevel":"Low"},{"month":"2026-03","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sorghum","rainfall":18.0,"ndvi":0.33,"pest":14,"irrigation":12.4,"inputAvail":58.7,"price":299.43,"yield":1.29,"risk":51.3,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sunflower","rainfall":33.4,"ndvi":0.38,"pest":7,"irrigation":16.2,"inputAvail":82.6,"price":643.43,"yield":1.31,"risk":44.0,"riskLevel":"Low"},{"month":"2026-03","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sugar beans","rainfall":14.5,"ndvi":0.3,"pest":13,"irrigation":6.9,"inputAvail":46.8,"price":1299.11,"yield":1.1,"risk":66.5,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sugar beans","rainfall":10.1,"ndvi":0.26,"pest":5,"irrigation":14.4,"inputAvail":49.2,"price":992.86,"yield":0.8,"risk":51.8,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sorghum","rainfall":29.9,"ndvi":0.24,"pest":13,"irrigation":15.7,"inputAvail":42.5,"price":333.59,"yield":1.4,"risk":77.0,"riskLevel":"High"},{"month":"2026-03","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Maize","rainfall":46.5,"ndvi":0.43,"pest":12,"irrigation":7.6,"inputAvail":82.0,"price":314.13,"yield":2.94,"risk":41.8,"riskLevel":"Low"},{"month":"2026-03","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sugar beans","rainfall":17.9,"ndvi":0.28,"pest":16,"irrigation":28.9,"inputAvail":58.8,"price":1180.47,"yield":1.03,"risk":66.2,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Tomatoes","rainfall":73.5,"ndvi":0.59,"pest":18,"irrigation":16.6,"inputAvail":34.6,"price":613.22,"yield":14.12,"risk":44.3,"riskLevel":"Low"},{"month":"2026-03","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sunflower","rainfall":27.9,"ndvi":0.36,"pest":7,"irrigation":30.2,"inputAvail":31.4,"price":565.34,"yield":1.56,"risk":38.2,"riskLevel":"Low"},{"month":"2026-03","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Tomatoes","rainfall":24.4,"ndvi":0.26,"pest":11,"irrigation":36.2,"inputAvail":58.3,"price":588.66,"yield":9.81,"risk":57.9,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sugar beans","rainfall":35.0,"ndvi":0.37,"pest":20,"irrigation":27.9,"inputAvail":45.4,"price":1187.23,"yield":1.1,"risk":67.7,"riskLevel":"Medium"},{"month":"2026-03","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Maize","rainfall":38.2,"ndvi":0.47,"pest":6,"irrigation":20.8,"inputAvail":53.2,"price":319.51,"yield":3.29,"risk":31.2,"riskLevel":"Low"},{"month":"2026-03","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Tomatoes","rainfall":82.6,"ndvi":0.54,"pest":13,"irrigation":49.1,"inputAvail":70.7,"price":574.25,"yield":15.24,"risk":39.1,"riskLevel":"Low"},{"month":"2026-03","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Groundnuts","rainfall":68.1,"ndvi":0.54,"pest":8,"irrigation":40.2,"inputAvail":66.3,"price":929.65,"yield":1.54,"risk":28.2,"riskLevel":"Low"},{"month":"2026-03","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sorghum","rainfall":44.7,"ndvi":0.42,"pest":8,"irrigation":32.3,"inputAvail":67.2,"price":267.22,"yield":1.28,"risk":43.2,"riskLevel":"Low"},{"month":"2026-03","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Groundnuts","rainfall":102.4,"ndvi":0.57,"pest":5,"irrigation":52.6,"inputAvail":44.6,"price":791.63,"yield":1.6,"risk":21.2,"riskLevel":"Low"},{"month":"2026-03","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sunflower","rainfall":30.1,"ndvi":0.29,"pest":7,"irrigation":38.2,"inputAvail":67.7,"price":659.13,"yield":1.5,"risk":51.5,"riskLevel":"Medium"},{"month":"2026-03","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Tomatoes","rainfall":74.6,"ndvi":0.44,"pest":17,"irrigation":53.9,"inputAvail":73.0,"price":518.78,"yield":18.29,"risk":35.2,"riskLevel":"Low"},{"month":"2026-04","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Groundnuts","rainfall":44.9,"ndvi":0.36,"pest":14,"irrigation":20.5,"inputAvail":74.3,"price":791.83,"yield":1.17,"risk":58.0,"riskLevel":"Medium"},{"month":"2026-04","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Maize","rainfall":54.5,"ndvi":0.42,"pest":11,"irrigation":41.5,"inputAvail":48.3,"price":276.46,"yield":2.53,"risk":40.1,"riskLevel":"Low"},{"month":"2026-04","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sorghum","rainfall":59.9,"ndvi":0.45,"pest":6,"irrigation":53.5,"inputAvail":59.9,"price":292.29,"yield":1.23,"risk":35.0,"riskLevel":"Low"},{"month":"2026-04","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sunflower","rainfall":26.0,"ndvi":0.34,"pest":10,"irrigation":34.5,"inputAvail":79.5,"price":666.04,"yield":1.18,"risk":39.7,"riskLevel":"Low"},{"month":"2026-04","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Maize","rainfall":45.7,"ndvi":0.36,"pest":6,"irrigation":37.7,"inputAvail":59.5,"price":320.59,"yield":2.07,"risk":43.7,"riskLevel":"Low"},{"month":"2026-04","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Groundnuts","rainfall":42.7,"ndvi":0.34,"pest":2,"irrigation":33.7,"inputAvail":68.1,"price":760.14,"yield":1.17,"risk":38.9,"riskLevel":"Low"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Maize","rainfall":25.4,"ndvi":0.38,"pest":10,"irrigation":44.7,"inputAvail":62.7,"price":340.1,"yield":2.95,"risk":48.8,"riskLevel":"Medium"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sunflower","rainfall":30.8,"ndvi":0.23,"pest":1,"irrigation":54.4,"inputAvail":61.0,"price":503.11,"yield":1.57,"risk":55.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Tomatoes","rainfall":40.3,"ndvi":0.35,"pest":13,"irrigation":33.6,"inputAvail":58.9,"price":456.54,"yield":14.92,"risk":58.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Maize","rainfall":35.6,"ndvi":0.26,"pest":5,"irrigation":40.7,"inputAvail":58.7,"price":344.32,"yield":2.81,"risk":41.8,"riskLevel":"Low"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sunflower","rainfall":27.5,"ndvi":0.43,"pest":9,"irrigation":59.5,"inputAvail":45.6,"price":509.23,"yield":1.7,"risk":46.6,"riskLevel":"Medium"},{"month":"2026-04","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Tomatoes","rainfall":46.4,"ndvi":0.45,"pest":16,"irrigation":30.5,"inputAvail":68.7,"price":484.62,"yield":17.29,"risk":40.6,"riskLevel":"Low"},{"month":"2026-04","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sorghum","rainfall":64.5,"ndvi":0.49,"pest":3,"irrigation":39.1,"inputAvail":62.1,"price":250.51,"yield":1.68,"risk":16.7,"riskLevel":"Low"},{"month":"2026-04","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Tomatoes","rainfall":57.2,"ndvi":0.51,"pest":17,"irrigation":7.9,"inputAvail":44.9,"price":608.81,"yield":17.86,"risk":55.8,"riskLevel":"Medium"},{"month":"2026-04","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Groundnuts","rainfall":19.6,"ndvi":0.33,"pest":12,"irrigation":29.8,"inputAvail":37.1,"price":850.35,"yield":0.92,"risk":56.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Maize","rainfall":47.5,"ndvi":0.41,"pest":12,"irrigation":16.8,"inputAvail":90.8,"price":315.02,"yield":2.61,"risk":43.1,"riskLevel":"Low"},{"month":"2026-04","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sorghum","rainfall":33.9,"ndvi":0.3,"pest":7,"irrigation":24.8,"inputAvail":53.1,"price":260.25,"yield":1.34,"risk":53.3,"riskLevel":"Medium"},{"month":"2026-04","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sunflower","rainfall":42.4,"ndvi":0.33,"pest":7,"irrigation":49.7,"inputAvail":57.0,"price":590.75,"yield":1.16,"risk":48.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sugar beans","rainfall":29.8,"ndvi":0.34,"pest":19,"irrigation":37.1,"inputAvail":74.3,"price":1312.33,"yield":0.77,"risk":58.9,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Maize","rainfall":35.6,"ndvi":0.38,"pest":9,"irrigation":37.6,"inputAvail":74.7,"price":354.48,"yield":2.38,"risk":38.5,"riskLevel":"Low"},{"month":"2026-04","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Groundnuts","rainfall":27.1,"ndvi":0.29,"pest":5,"irrigation":39.4,"inputAvail":54.2,"price":952.34,"yield":1.09,"risk":50.6,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sorghum","rainfall":31.5,"ndvi":0.29,"pest":12,"irrigation":51.0,"inputAvail":50.2,"price":273.83,"yield":1.54,"risk":49.8,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Maize","rainfall":42.9,"ndvi":0.37,"pest":10,"irrigation":3.2,"inputAvail":77.2,"price":319.91,"yield":2.23,"risk":46.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sugar beans","rainfall":33.1,"ndvi":0.42,"pest":11,"irrigation":18.4,"inputAvail":68.6,"price":1016.65,"yield":0.98,"risk":52.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sugar beans","rainfall":26.4,"ndvi":0.29,"pest":20,"irrigation":36.0,"inputAvail":67.4,"price":1204.51,"yield":0.94,"risk":58.9,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sunflower","rainfall":38.2,"ndvi":0.41,"pest":9,"irrigation":37.9,"inputAvail":89.6,"price":587.75,"yield":1.24,"risk":41.8,"riskLevel":"Low"},{"month":"2026-04","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sorghum","rainfall":44.9,"ndvi":0.48,"pest":8,"irrigation":36.0,"inputAvail":63.3,"price":345.08,"yield":1.71,"risk":46.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Maize","rainfall":23.2,"ndvi":0.34,"pest":8,"irrigation":37.2,"inputAvail":49.7,"price":326.25,"yield":3.11,"risk":43.0,"riskLevel":"Low"},{"month":"2026-04","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sugar beans","rainfall":44.1,"ndvi":0.52,"pest":11,"irrigation":35.2,"inputAvail":49.6,"price":1215.2,"yield":0.94,"risk":30.7,"riskLevel":"Low"},{"month":"2026-04","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Tomatoes","rainfall":20.3,"ndvi":0.29,"pest":19,"irrigation":30.0,"inputAvail":57.3,"price":518.42,"yield":11.44,"risk":77.0,"riskLevel":"High"},{"month":"2026-04","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sugar beans","rainfall":30.8,"ndvi":0.36,"pest":14,"irrigation":36.4,"inputAvail":58.3,"price":1066.85,"yield":0.94,"risk":54.6,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sorghum","rainfall":34.6,"ndvi":0.32,"pest":5,"irrigation":21.5,"inputAvail":41.8,"price":341.69,"yield":1.52,"risk":51.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Groundnuts","rainfall":42.2,"ndvi":0.34,"pest":1,"irrigation":31.8,"inputAvail":78.5,"price":955.13,"yield":1.29,"risk":40.1,"riskLevel":"Low"},{"month":"2026-04","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Groundnuts","rainfall":29.5,"ndvi":0.28,"pest":6,"irrigation":32.6,"inputAvail":74.7,"price":983.24,"yield":1.19,"risk":58.1,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sunflower","rainfall":34.4,"ndvi":0.44,"pest":14,"irrigation":33.9,"inputAvail":64.2,"price":605.59,"yield":1.95,"risk":47.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Maize","rainfall":36.1,"ndvi":0.39,"pest":2,"irrigation":23.5,"inputAvail":67.1,"price":285.41,"yield":2.71,"risk":35.5,"riskLevel":"Low"},{"month":"2026-04","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sunflower","rainfall":20.8,"ndvi":0.3,"pest":8,"irrigation":32.1,"inputAvail":83.6,"price":619.08,"yield":1.47,"risk":45.3,"riskLevel":"Medium"},{"month":"2026-04","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sugar beans","rainfall":29.8,"ndvi":0.38,"pest":22,"irrigation":33.9,"inputAvail":95.0,"price":1155.87,"yield":0.99,"risk":69.1,"riskLevel":"Medium"},{"month":"2026-04","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Groundnuts","rainfall":22.1,"ndvi":0.4,"pest":9,"irrigation":22.1,"inputAvail":72.5,"price":950.59,"yield":0.9,"risk":43.5,"riskLevel":"Low"},{"month":"2026-04","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sorghum","rainfall":14.7,"ndvi":0.28,"pest":9,"irrigation":23.4,"inputAvail":70.5,"price":282.99,"yield":1.0,"risk":49.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sunflower","rainfall":23.4,"ndvi":0.38,"pest":9,"irrigation":25.5,"inputAvail":74.4,"price":664.8,"yield":1.26,"risk":40.7,"riskLevel":"Low"},{"month":"2026-04","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Tomatoes","rainfall":29.3,"ndvi":0.32,"pest":17,"irrigation":25.6,"inputAvail":53.4,"price":600.47,"yield":10.69,"risk":62.3,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Maize","rainfall":20.1,"ndvi":0.37,"pest":7,"irrigation":27.6,"inputAvail":82.0,"price":282.8,"yield":2.89,"risk":39.0,"riskLevel":"Low"},{"month":"2026-04","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sugar beans","rainfall":24.6,"ndvi":0.23,"pest":10,"irrigation":3.9,"inputAvail":47.5,"price":1164.48,"yield":0.66,"risk":73.7,"riskLevel":"High"},{"month":"2026-04","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sorghum","rainfall":32.9,"ndvi":0.39,"pest":10,"irrigation":16.6,"inputAvail":54.1,"price":284.55,"yield":1.1,"risk":61.6,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Groundnuts","rainfall":17.0,"ndvi":0.28,"pest":10,"irrigation":24.4,"inputAvail":49.5,"price":976.45,"yield":1.01,"risk":44.8,"riskLevel":"Low"},{"month":"2026-04","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sugar beans","rainfall":7.1,"ndvi":0.1,"pest":10,"irrigation":21.4,"inputAvail":41.3,"price":1239.95,"yield":0.65,"risk":80.2,"riskLevel":"High"},{"month":"2026-04","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Maize","rainfall":34.3,"ndvi":0.31,"pest":6,"irrigation":2.0,"inputAvail":51.3,"price":301.23,"yield":2.12,"risk":61.7,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sugar beans","rainfall":36.9,"ndvi":0.37,"pest":15,"irrigation":28.3,"inputAvail":58.4,"price":1187.1,"yield":1.04,"risk":49.8,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Maize","rainfall":30.7,"ndvi":0.31,"pest":2,"irrigation":20.8,"inputAvail":56.3,"price":314.9,"yield":2.03,"risk":50.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Tomatoes","rainfall":0.0,"ndvi":0.33,"pest":11,"irrigation":23.5,"inputAvail":66.7,"price":531.83,"yield":15.42,"risk":49.6,"riskLevel":"Medium"},{"month":"2026-04","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Groundnuts","rainfall":22.7,"ndvi":0.34,"pest":5,"irrigation":20.4,"inputAvail":65.4,"price":897.88,"yield":1.16,"risk":32.3,"riskLevel":"Low"},{"month":"2026-04","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sunflower","rainfall":5.9,"ndvi":0.29,"pest":0,"irrigation":10.0,"inputAvail":57.8,"price":515.45,"yield":1.29,"risk":40.1,"riskLevel":"Low"},{"month":"2026-04","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Tomatoes","rainfall":24.7,"ndvi":0.29,"pest":19,"irrigation":36.9,"inputAvail":33.8,"price":585.29,"yield":11.6,"risk":70.9,"riskLevel":"High"},{"month":"2026-04","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sunflower","rainfall":33.7,"ndvi":0.34,"pest":9,"irrigation":39.4,"inputAvail":58.3,"price":602.41,"yield":1.62,"risk":50.2,"riskLevel":"Medium"},{"month":"2026-04","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sorghum","rainfall":35.6,"ndvi":0.34,"pest":7,"irrigation":45.1,"inputAvail":71.9,"price":302.33,"yield":1.31,"risk":43.4,"riskLevel":"Low"},{"month":"2026-04","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Groundnuts","rainfall":37.7,"ndvi":0.22,"pest":13,"irrigation":31.4,"inputAvail":44.0,"price":940.61,"yield":1.13,"risk":67.4,"riskLevel":"Medium"},{"month":"2026-04","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Tomatoes","rainfall":34.0,"ndvi":0.33,"pest":13,"irrigation":53.9,"inputAvail":66.6,"price":486.94,"yield":14.98,"risk":45.3,"riskLevel":"Medium"},{"month":"2026-04","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sunflower","rainfall":35.0,"ndvi":0.32,"pest":8,"irrigation":40.9,"inputAvail":46.7,"price":661.0,"yield":1.74,"risk":48.5,"riskLevel":"Medium"},{"month":"2026-04","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Maize","rainfall":37.7,"ndvi":0.31,"pest":9,"irrigation":35.1,"inputAvail":56.4,"price":307.21,"yield":2.0,"risk":55.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sugar beans","rainfall":13.6,"ndvi":0.31,"pest":13,"irrigation":41.6,"inputAvail":60.5,"price":1156.3,"yield":0.85,"risk":48.0,"riskLevel":"Medium"},{"month":"2026-05","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sorghum","rainfall":26.6,"ndvi":0.34,"pest":0,"irrigation":22.6,"inputAvail":95.0,"price":273.32,"yield":1.23,"risk":36.6,"riskLevel":"Low"},{"month":"2026-05","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Groundnuts","rainfall":20.4,"ndvi":0.34,"pest":7,"irrigation":36.8,"inputAvail":61.6,"price":967.41,"yield":1.17,"risk":48.3,"riskLevel":"Medium"},{"month":"2026-05","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Tomatoes","rainfall":18.5,"ndvi":0.34,"pest":9,"irrigation":47.5,"inputAvail":64.7,"price":541.16,"yield":13.13,"risk":61.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Maize","rainfall":16.3,"ndvi":0.28,"pest":13,"irrigation":27.9,"inputAvail":70.2,"price":304.36,"yield":2.06,"risk":56.6,"riskLevel":"Medium"},{"month":"2026-05","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sorghum","rainfall":19.3,"ndvi":0.23,"pest":2,"irrigation":47.5,"inputAvail":49.4,"price":319.58,"yield":1.43,"risk":42.0,"riskLevel":"Low"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sunflower","rainfall":18.6,"ndvi":0.29,"pest":2,"irrigation":38.8,"inputAvail":40.8,"price":656.45,"yield":1.53,"risk":49.0,"riskLevel":"Medium"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sugar beans","rainfall":23.7,"ndvi":0.49,"pest":4,"irrigation":32.1,"inputAvail":88.3,"price":994.02,"yield":0.86,"risk":30.4,"riskLevel":"Low"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Groundnuts","rainfall":17.0,"ndvi":0.39,"pest":8,"irrigation":31.5,"inputAvail":60.9,"price":946.37,"yield":1.1,"risk":30.2,"riskLevel":"Low"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sugar beans","rainfall":14.2,"ndvi":0.24,"pest":8,"irrigation":38.8,"inputAvail":65.9,"price":1030.07,"yield":0.82,"risk":64.2,"riskLevel":"Medium"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sorghum","rainfall":23.2,"ndvi":0.33,"pest":5,"irrigation":48.3,"inputAvail":59.8,"price":338.39,"yield":1.35,"risk":36.2,"riskLevel":"Low"},{"month":"2026-05","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Maize","rainfall":6.7,"ndvi":0.28,"pest":12,"irrigation":50.4,"inputAvail":76.3,"price":369.04,"yield":2.84,"risk":70.6,"riskLevel":"High"},{"month":"2026-05","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Maize","rainfall":22.6,"ndvi":0.32,"pest":13,"irrigation":40.5,"inputAvail":61.8,"price":347.02,"yield":3.1,"risk":50.0,"riskLevel":"Medium"},{"month":"2026-05","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Tomatoes","rainfall":34.0,"ndvi":0.3,"pest":9,"irrigation":40.2,"inputAvail":41.0,"price":527.22,"yield":11.97,"risk":58.4,"riskLevel":"Medium"},{"month":"2026-05","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sunflower","rainfall":21.9,"ndvi":0.15,"pest":1,"irrigation":37.4,"inputAvail":61.3,"price":604.47,"yield":1.41,"risk":54.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Tomatoes","rainfall":15.4,"ndvi":0.26,"pest":10,"irrigation":29.3,"inputAvail":62.0,"price":588.07,"yield":12.64,"risk":56.7,"riskLevel":"Medium"},{"month":"2026-05","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sunflower","rainfall":12.3,"ndvi":0.16,"pest":4,"irrigation":16.5,"inputAvail":67.8,"price":603.62,"yield":1.29,"risk":49.9,"riskLevel":"Medium"},{"month":"2026-05","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sorghum","rainfall":26.2,"ndvi":0.33,"pest":5,"irrigation":19.6,"inputAvail":65.2,"price":299.86,"yield":1.56,"risk":44.0,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Tomatoes","rainfall":19.7,"ndvi":0.31,"pest":1,"irrigation":39.0,"inputAvail":67.7,"price":478.09,"yield":15.94,"risk":33.7,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Maize","rainfall":18.1,"ndvi":0.29,"pest":0,"irrigation":60.8,"inputAvail":65.2,"price":360.57,"yield":2.73,"risk":45.7,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sunflower","rainfall":18.7,"ndvi":0.41,"pest":9,"irrigation":39.4,"inputAvail":74.7,"price":585.6,"yield":1.27,"risk":51.7,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Sugar beans","rainfall":23.2,"ndvi":0.39,"pest":12,"irrigation":18.6,"inputAvail":66.2,"price":1153.25,"yield":0.97,"risk":45.3,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Maize","rainfall":14.4,"ndvi":0.29,"pest":11,"irrigation":35.2,"inputAvail":61.9,"price":272.58,"yield":2.13,"risk":55.2,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Groundnuts","rainfall":25.1,"ndvi":0.34,"pest":6,"irrigation":30.1,"inputAvail":65.9,"price":731.52,"yield":0.89,"risk":46.4,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Maize","rainfall":27.9,"ndvi":0.32,"pest":8,"irrigation":41.7,"inputAvail":55.2,"price":299.65,"yield":3.13,"risk":41.3,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sunflower","rainfall":13.3,"ndvi":0.22,"pest":9,"irrigation":30.0,"inputAvail":71.6,"price":608.29,"yield":1.04,"risk":58.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Tomatoes","rainfall":21.4,"ndvi":0.26,"pest":7,"irrigation":36.7,"inputAvail":93.7,"price":463.83,"yield":10.77,"risk":50.4,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sunflower","rainfall":14.5,"ndvi":0.3,"pest":2,"irrigation":10.5,"inputAvail":51.9,"price":622.77,"yield":1.65,"risk":55.8,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sorghum","rainfall":23.9,"ndvi":0.34,"pest":9,"irrigation":6.7,"inputAvail":91.6,"price":272.97,"yield":1.44,"risk":55.0,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Maize","rainfall":21.3,"ndvi":0.22,"pest":5,"irrigation":41.7,"inputAvail":63.7,"price":317.36,"yield":2.27,"risk":45.6,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Tomatoes","rainfall":13.7,"ndvi":0.39,"pest":2,"irrigation":41.3,"inputAvail":75.2,"price":607.21,"yield":11.1,"risk":36.1,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sugar beans","rainfall":21.7,"ndvi":0.4,"pest":3,"irrigation":46.7,"inputAvail":47.9,"price":1289.66,"yield":0.97,"risk":27.2,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Maize","rainfall":21.6,"ndvi":0.36,"pest":3,"irrigation":45.5,"inputAvail":92.1,"price":282.23,"yield":2.23,"risk":42.4,"riskLevel":"Low"},{"month":"2026-05","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sugar beans","rainfall":19.0,"ndvi":0.17,"pest":7,"irrigation":26.2,"inputAvail":70.6,"price":988.3,"yield":0.91,"risk":58.8,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Tomatoes","rainfall":7.4,"ndvi":0.24,"pest":8,"irrigation":28.7,"inputAvail":73.2,"price":625.35,"yield":10.32,"risk":53.6,"riskLevel":"Medium"},{"month":"2026-05","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Groundnuts","rainfall":18.1,"ndvi":0.19,"pest":4,"irrigation":19.3,"inputAvail":32.5,"price":956.58,"yield":1.0,"risk":52.1,"riskLevel":"Medium"},{"month":"2026-05","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Groundnuts","rainfall":8.4,"ndvi":0.17,"pest":10,"irrigation":22.9,"inputAvail":45.3,"price":937.38,"yield":0.72,"risk":81.6,"riskLevel":"High"},{"month":"2026-05","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Maize","rainfall":10.2,"ndvi":0.32,"pest":0,"irrigation":30.4,"inputAvail":73.0,"price":370.94,"yield":2.28,"risk":33.4,"riskLevel":"Low"},{"month":"2026-05","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sugar beans","rainfall":9.3,"ndvi":0.25,"pest":1,"irrigation":38.8,"inputAvail":33.2,"price":1001.82,"yield":0.89,"risk":49.2,"riskLevel":"Medium"},{"month":"2026-05","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Tomatoes","rainfall":9.6,"ndvi":0.22,"pest":7,"irrigation":28.0,"inputAvail":31.4,"price":542.26,"yield":14.27,"risk":56.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Groundnuts","rainfall":11.2,"ndvi":0.35,"pest":2,"irrigation":36.3,"inputAvail":63.5,"price":947.46,"yield":0.93,"risk":34.6,"riskLevel":"Low"},{"month":"2026-05","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Sorghum","rainfall":7.0,"ndvi":0.21,"pest":6,"irrigation":12.9,"inputAvail":83.3,"price":285.55,"yield":1.19,"risk":63.1,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Sugar beans","rainfall":6.6,"ndvi":0.23,"pest":8,"irrigation":27.4,"inputAvail":54.3,"price":1075.64,"yield":0.97,"risk":60.8,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Groundnuts","rainfall":11.0,"ndvi":0.22,"pest":12,"irrigation":14.0,"inputAvail":50.3,"price":876.92,"yield":1.13,"risk":80.2,"riskLevel":"High"},{"month":"2026-05","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Maize","rainfall":5.3,"ndvi":0.22,"pest":0,"irrigation":22.3,"inputAvail":62.9,"price":350.86,"yield":2.67,"risk":51.5,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sunflower","rainfall":0.0,"ndvi":0.19,"pest":19,"irrigation":10.9,"inputAvail":54.6,"price":625.86,"yield":1.48,"risk":70.4,"riskLevel":"High"},{"month":"2026-05","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sugar beans","rainfall":8.6,"ndvi":0.37,"pest":8,"irrigation":21.9,"inputAvail":63.1,"price":1168.63,"yield":0.86,"risk":60.6,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Groundnuts","rainfall":0.0,"ndvi":0.28,"pest":8,"irrigation":6.5,"inputAvail":53.2,"price":886.84,"yield":1.02,"risk":58.2,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sugar beans","rainfall":10.4,"ndvi":0.3,"pest":14,"irrigation":29.1,"inputAvail":78.3,"price":1194.95,"yield":0.95,"risk":69.7,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Groundnuts","rainfall":14.7,"ndvi":0.37,"pest":6,"irrigation":30.5,"inputAvail":41.1,"price":845.7,"yield":0.91,"risk":40.3,"riskLevel":"Low"},{"month":"2026-05","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Maize","rainfall":12.5,"ndvi":0.33,"pest":10,"irrigation":22.5,"inputAvail":85.1,"price":354.24,"yield":2.08,"risk":43.0,"riskLevel":"Low"},{"month":"2026-05","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sunflower","rainfall":15.1,"ndvi":0.22,"pest":4,"irrigation":43.9,"inputAvail":36.4,"price":566.77,"yield":1.48,"risk":53.1,"riskLevel":"Medium"},{"month":"2026-05","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Tomatoes","rainfall":18.7,"ndvi":0.27,"pest":11,"irrigation":25.3,"inputAvail":65.0,"price":597.32,"yield":11.16,"risk":75.3,"riskLevel":"High"},{"month":"2026-05","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Maize","rainfall":5.4,"ndvi":0.14,"pest":7,"irrigation":28.0,"inputAvail":33.6,"price":370.47,"yield":2.31,"risk":75.1,"riskLevel":"High"},{"month":"2026-05","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sunflower","rainfall":25.1,"ndvi":0.33,"pest":7,"irrigation":33.6,"inputAvail":40.8,"price":582.9,"yield":1.25,"risk":62.3,"riskLevel":"Medium"},{"month":"2026-05","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sorghum","rainfall":17.4,"ndvi":0.27,"pest":1,"irrigation":50.6,"inputAvail":77.4,"price":304.09,"yield":1.09,"risk":32.0,"riskLevel":"Low"},{"month":"2026-05","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sugar beans","rainfall":23.1,"ndvi":0.34,"pest":7,"irrigation":52.3,"inputAvail":74.4,"price":1110.18,"yield":0.84,"risk":43.5,"riskLevel":"Low"},{"month":"2026-05","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sugar beans","rainfall":20.6,"ndvi":0.34,"pest":1,"irrigation":49.2,"inputAvail":76.9,"price":1194.11,"yield":0.92,"risk":29.9,"riskLevel":"Low"},{"month":"2026-05","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Maize","rainfall":29.1,"ndvi":0.29,"pest":6,"irrigation":27.0,"inputAvail":62.2,"price":277.53,"yield":2.45,"risk":48.0,"riskLevel":"Medium"},{"month":"2026-05","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Groundnuts","rainfall":19.8,"ndvi":0.32,"pest":9,"irrigation":37.4,"inputAvail":68.6,"price":766.76,"yield":1.02,"risk":43.8,"riskLevel":"Low"},{"month":"2026-06","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Maize","rainfall":12.9,"ndvi":0.17,"pest":6,"irrigation":41.6,"inputAvail":83.8,"price":332.28,"yield":1.75,"risk":51.5,"riskLevel":"Medium"},{"month":"2026-06","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Tomatoes","rainfall":12.8,"ndvi":0.33,"pest":5,"irrigation":34.9,"inputAvail":64.9,"price":523.22,"yield":13.95,"risk":49.2,"riskLevel":"Medium"},{"month":"2026-06","province":"Harare","district":"Harare Urban","lat":-17.8292,"lon":31.0522,"crop":"Sugar beans","rainfall":9.2,"ndvi":0.35,"pest":5,"irrigation":33.9,"inputAvail":61.5,"price":1033.84,"yield":0.85,"risk":47.5,"riskLevel":"Medium"},{"month":"2026-06","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Sugar beans","rainfall":20.3,"ndvi":0.28,"pest":12,"irrigation":24.9,"inputAvail":48.1,"price":1154.05,"yield":1.06,"risk":52.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Tomatoes","rainfall":15.9,"ndvi":0.22,"pest":7,"irrigation":33.0,"inputAvail":42.0,"price":628.41,"yield":9.36,"risk":56.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Harare","district":"Chitungwiza","lat":-18.0127,"lon":31.0756,"crop":"Maize","rainfall":21.1,"ndvi":0.26,"pest":5,"irrigation":47.7,"inputAvail":71.6,"price":370.09,"yield":2.49,"risk":51.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Sorghum","rainfall":13.9,"ndvi":0.38,"pest":9,"irrigation":27.5,"inputAvail":63.0,"price":332.23,"yield":1.45,"risk":52.1,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Maize","rainfall":17.8,"ndvi":0.28,"pest":3,"irrigation":40.3,"inputAvail":64.4,"price":285.04,"yield":2.47,"risk":45.1,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo Central","lat":-20.1325,"lon":28.6265,"crop":"Tomatoes","rainfall":8.2,"ndvi":0.28,"pest":11,"irrigation":50.4,"inputAvail":66.5,"price":591.55,"yield":10.0,"risk":54.5,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Maize","rainfall":12.7,"ndvi":0.16,"pest":10,"irrigation":44.6,"inputAvail":68.6,"price":318.83,"yield":2.43,"risk":68.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Tomatoes","rainfall":16.6,"ndvi":0.26,"pest":8,"irrigation":34.5,"inputAvail":33.1,"price":591.93,"yield":14.46,"risk":62.4,"riskLevel":"Medium"},{"month":"2026-06","province":"Bulawayo","district":"Bulawayo North","lat":-20.08,"lon":28.59,"crop":"Sugar beans","rainfall":18.6,"ndvi":0.32,"pest":12,"irrigation":38.9,"inputAvail":70.0,"price":1286.1,"yield":1.05,"risk":59.7,"riskLevel":"Medium"},{"month":"2026-06","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sunflower","rainfall":11.9,"ndvi":0.27,"pest":12,"irrigation":48.5,"inputAvail":40.8,"price":656.16,"yield":1.14,"risk":48.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Sugar beans","rainfall":11.5,"ndvi":0.31,"pest":10,"irrigation":40.2,"inputAvail":42.1,"price":1310.33,"yield":0.8,"risk":65.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Manicaland","district":"Mutare","lat":-18.9707,"lon":32.6709,"crop":"Maize","rainfall":9.1,"ndvi":0.33,"pest":7,"irrigation":31.7,"inputAvail":60.7,"price":299.22,"yield":3.1,"risk":38.3,"riskLevel":"Low"},{"month":"2026-06","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Sorghum","rainfall":19.3,"ndvi":0.28,"pest":3,"irrigation":20.4,"inputAvail":54.7,"price":340.19,"yield":1.17,"risk":50.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Maize","rainfall":13.7,"ndvi":0.28,"pest":3,"irrigation":39.8,"inputAvail":64.9,"price":360.44,"yield":2.74,"risk":36.6,"riskLevel":"Low"},{"month":"2026-06","province":"Manicaland","district":"Chipinge","lat":-20.1883,"lon":32.6236,"crop":"Tomatoes","rainfall":21.7,"ndvi":0.3,"pest":5,"irrigation":31.1,"inputAvail":73.0,"price":518.29,"yield":10.47,"risk":49.2,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Tomatoes","rainfall":17.7,"ndvi":0.19,"pest":7,"irrigation":59.2,"inputAvail":63.7,"price":594.44,"yield":9.03,"risk":45.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Groundnuts","rainfall":18.4,"ndvi":0.26,"pest":7,"irrigation":29.1,"inputAvail":59.2,"price":955.12,"yield":1.15,"risk":55.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland Central","district":"Bindura","lat":-17.3019,"lon":31.3306,"crop":"Sugar beans","rainfall":20.5,"ndvi":0.39,"pest":8,"irrigation":48.2,"inputAvail":80.5,"price":1035.77,"yield":1.21,"risk":42.5,"riskLevel":"Low"},{"month":"2026-06","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Maize","rainfall":16.1,"ndvi":0.22,"pest":10,"irrigation":25.2,"inputAvail":73.1,"price":291.07,"yield":2.2,"risk":70.3,"riskLevel":"High"},{"month":"2026-06","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Groundnuts","rainfall":14.9,"ndvi":0.32,"pest":15,"irrigation":25.1,"inputAvail":88.2,"price":987.44,"yield":1.2,"risk":58.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland Central","district":"Mazowe","lat":-17.5157,"lon":30.9739,"crop":"Tomatoes","rainfall":9.0,"ndvi":0.24,"pest":10,"irrigation":33.8,"inputAvail":88.6,"price":565.19,"yield":12.26,"risk":59.4,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sorghum","rainfall":12.4,"ndvi":0.13,"pest":12,"irrigation":51.7,"inputAvail":59.9,"price":294.17,"yield":0.96,"risk":57.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Sugar beans","rainfall":24.9,"ndvi":0.3,"pest":12,"irrigation":46.1,"inputAvail":74.6,"price":986.92,"yield":0.83,"risk":57.7,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland East","district":"Marondera","lat":-18.1853,"lon":31.5519,"crop":"Maize","rainfall":14.3,"ndvi":0.29,"pest":16,"irrigation":46.4,"inputAvail":69.4,"price":377.27,"yield":2.63,"risk":38.9,"riskLevel":"Low"},{"month":"2026-06","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Tomatoes","rainfall":16.0,"ndvi":0.19,"pest":8,"irrigation":38.1,"inputAvail":67.0,"price":518.13,"yield":9.4,"risk":73.4,"riskLevel":"High"},{"month":"2026-06","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sorghum","rainfall":20.8,"ndvi":0.27,"pest":12,"irrigation":26.9,"inputAvail":61.2,"price":321.57,"yield":1.16,"risk":61.1,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland East","district":"Murehwa","lat":-17.64,"lon":31.78,"crop":"Sugar beans","rainfall":14.5,"ndvi":0.25,"pest":5,"irrigation":22.7,"inputAvail":80.9,"price":1032.76,"yield":0.9,"risk":41.6,"riskLevel":"Low"},{"month":"2026-06","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sorghum","rainfall":17.5,"ndvi":0.34,"pest":8,"irrigation":39.1,"inputAvail":45.7,"price":320.15,"yield":1.13,"risk":48.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Groundnuts","rainfall":18.4,"ndvi":0.34,"pest":10,"irrigation":28.7,"inputAvail":84.5,"price":791.84,"yield":0.91,"risk":46.3,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland West","district":"Chinhoyi","lat":-17.3667,"lon":30.2,"crop":"Sugar beans","rainfall":12.8,"ndvi":0.24,"pest":2,"irrigation":49.0,"inputAvail":66.5,"price":1027.43,"yield":0.77,"risk":50.5,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Tomatoes","rainfall":11.0,"ndvi":0.22,"pest":4,"irrigation":25.1,"inputAvail":66.8,"price":504.32,"yield":10.42,"risk":48.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Groundnuts","rainfall":12.8,"ndvi":0.26,"pest":3,"irrigation":30.2,"inputAvail":65.3,"price":850.74,"yield":1.0,"risk":46.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Mashonaland West","district":"Hurungwe","lat":-16.8438,"lon":29.6186,"crop":"Sunflower","rainfall":10.7,"ndvi":0.28,"pest":8,"irrigation":33.1,"inputAvail":89.5,"price":606.84,"yield":1.34,"risk":41.5,"riskLevel":"Low"},{"month":"2026-06","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Sugar beans","rainfall":9.4,"ndvi":0.16,"pest":7,"irrigation":22.5,"inputAvail":69.0,"price":952.95,"yield":0.9,"risk":58.7,"riskLevel":"Medium"},{"month":"2026-06","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Maize","rainfall":14.5,"ndvi":0.31,"pest":2,"irrigation":24.3,"inputAvail":54.6,"price":335.17,"yield":2.73,"risk":54.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Masvingo","district":"Masvingo","lat":-20.0744,"lon":30.8328,"crop":"Tomatoes","rainfall":9.3,"ndvi":0.34,"pest":4,"irrigation":32.8,"inputAvail":41.7,"price":617.32,"yield":12.34,"risk":33.3,"riskLevel":"Low"},{"month":"2026-06","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Tomatoes","rainfall":0.7,"ndvi":0.14,"pest":4,"irrigation":30.9,"inputAvail":76.1,"price":569.33,"yield":12.08,"risk":51.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Groundnuts","rainfall":4.2,"ndvi":0.24,"pest":10,"irrigation":25.7,"inputAvail":40.8,"price":801.63,"yield":1.07,"risk":66.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Masvingo","district":"Chiredzi","lat":-21.049,"lon":31.666,"crop":"Maize","rainfall":13.1,"ndvi":0.29,"pest":6,"irrigation":28.4,"inputAvail":54.0,"price":280.65,"yield":1.92,"risk":58.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Tomatoes","rainfall":13.6,"ndvi":0.33,"pest":10,"irrigation":28.3,"inputAvail":55.9,"price":468.64,"yield":13.68,"risk":61.8,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Maize","rainfall":4.1,"ndvi":0.33,"pest":11,"irrigation":11.7,"inputAvail":29.2,"price":277.89,"yield":2.91,"risk":59.1,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Hwange","lat":-18.3693,"lon":26.5,"crop":"Groundnuts","rainfall":14.3,"ndvi":0.31,"pest":15,"irrigation":27.2,"inputAvail":60.1,"price":805.34,"yield":1.01,"risk":61.7,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Tomatoes","rainfall":9.7,"ndvi":0.22,"pest":8,"irrigation":23.5,"inputAvail":50.5,"price":456.24,"yield":12.62,"risk":62.4,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Sugar beans","rainfall":6.8,"ndvi":0.19,"pest":3,"irrigation":18.4,"inputAvail":41.8,"price":1022.72,"yield":0.71,"risk":52.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland North","district":"Lupane","lat":-18.9315,"lon":27.8069,"crop":"Maize","rainfall":8.9,"ndvi":0.31,"pest":4,"irrigation":28.6,"inputAvail":45.9,"price":309.1,"yield":2.98,"risk":47.0,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sorghum","rainfall":7.7,"ndvi":0.16,"pest":6,"irrigation":23.0,"inputAvail":57.5,"price":251.62,"yield":1.34,"risk":65.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Sunflower","rainfall":11.5,"ndvi":0.26,"pest":8,"irrigation":23.4,"inputAvail":33.4,"price":589.42,"yield":1.16,"risk":57.5,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland South","district":"Gwanda","lat":-20.9362,"lon":29.0069,"crop":"Groundnuts","rainfall":3.3,"ndvi":0.25,"pest":8,"irrigation":26.5,"inputAvail":55.9,"price":917.68,"yield":0.95,"risk":59.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Maize","rainfall":6.8,"ndvi":0.24,"pest":6,"irrigation":35.5,"inputAvail":61.8,"price":362.09,"yield":2.07,"risk":61.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Sunflower","rainfall":13.4,"ndvi":0.3,"pest":1,"irrigation":14.0,"inputAvail":60.2,"price":586.57,"yield":1.34,"risk":42.4,"riskLevel":"Low"},{"month":"2026-06","province":"Matabeleland South","district":"Beitbridge","lat":-22.2167,"lon":30.0,"crop":"Tomatoes","rainfall":9.2,"ndvi":0.23,"pest":7,"irrigation":41.0,"inputAvail":51.1,"price":472.6,"yield":11.2,"risk":55.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Tomatoes","rainfall":15.2,"ndvi":0.26,"pest":13,"irrigation":46.2,"inputAvail":42.4,"price":618.38,"yield":12.44,"risk":55.9,"riskLevel":"Medium"},{"month":"2026-06","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sugar beans","rainfall":17.8,"ndvi":0.32,"pest":11,"irrigation":44.7,"inputAvail":51.4,"price":1074.27,"yield":0.88,"risk":52.4,"riskLevel":"Medium"},{"month":"2026-06","province":"Midlands","district":"Gweru","lat":-19.45,"lon":29.8167,"crop":"Sunflower","rainfall":12.1,"ndvi":0.22,"pest":5,"irrigation":44.8,"inputAvail":48.9,"price":585.65,"yield":1.26,"risk":42.6,"riskLevel":"Low"},{"month":"2026-06","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Sorghum","rainfall":15.9,"ndvi":0.31,"pest":3,"irrigation":50.1,"inputAvail":59.7,"price":269.41,"yield":1.57,"risk":47.6,"riskLevel":"Medium"},{"month":"2026-06","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Maize","rainfall":19.0,"ndvi":0.3,"pest":17,"irrigation":43.2,"inputAvail":54.6,"price":333.76,"yield":2.29,"risk":55.7,"riskLevel":"Medium"},{"month":"2026-06","province":"Midlands","district":"Kwekwe","lat":-18.9281,"lon":29.8149,"crop":"Groundnuts","rainfall":12.6,"ndvi":0.2,"pest":2,"irrigation":43.0,"inputAvail":56.1,"price":821.33,"yield":1.1,"risk":45.8,"riskLevel":"Medium"}];
+
+const state = { province:'', crop:'', month:'', risk:'', persona:'extension' };
+
+function filtered(){
+  return RAW_DATA.filter(r =>
+    (!state.province || r.province === state.province) &&
+    (!state.crop || r.crop === state.crop) &&
+    (!state.month || r.month === state.month) &&
+    (!state.risk || r.riskLevel === state.risk)
+  );
+}
+
+function avg(arr, key){
+  if(!arr.length) return 0;
+  return arr.reduce((s,r)=>s+r[key],0)/arr.length;
+}
+function fmt(n, d=1){ return Number(n).toFixed(d); }
+
+// ---------- populate filter dropdowns ----------
+function uniqueSorted(key){
+  return [...new Set(RAW_DATA.map(r=>r[key]))].sort();
+}
+function populateSelect(id, values){
+  const sel = document.getElementById(id);
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+populateSelect('fProvince', uniqueSorted('province'));
+populateSelect('fCrop', uniqueSorted('crop'));
+populateSelect('fMonth', uniqueSorted('month'));
+
+['fProvince','fCrop','fMonth','fRisk'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', e=>{
+    const map = {fProvince:'province', fCrop:'crop', fMonth:'month', fRisk:'risk'};
+    state[map[id]] = e.target.value;
+    render();
+  });
+});
+document.getElementById('resetFilters').addEventListener('click', ()=>{
+  state.province=''; state.crop=''; state.month=''; state.risk='';
+  ['fProvince','fCrop','fMonth','fRisk'].forEach(id=>document.getElementById(id).value='');
+  render();
+});
+
+// ---------- persona switcher ----------
+document.querySelectorAll('.persona-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.persona-btn').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    state.persona = btn.dataset.persona;
+    renderActions();
+  });
+});
+
+// ---------- KPI ----------
+function renderKpis(){
+  const d = filtered();
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = '';
+  const riskAvg = avg(d,'risk');
+  const highCount = new Set(d.filter(r=>r.riskLevel==='High').map(r=>r.district)).size;
+  const priceAvg = avg(d,'price');
+  const pestSum = d.reduce((s,r)=>s+r.pest,0);
+  const irrigAvg = avg(d,'irrigation');
+
+  const cards = [
+    {label:'Avg. climate‑crop risk score', value: d.length? fmt(riskAvg,1):'—', sub:'0 (low) – 100 (high)', cls: riskAvg>=60?'alert':riskAvg>=35?'warn':''},
+    {label:'Districts at High risk', value: highCount, sub: 'of '+new Set(d.map(r=>r.district)).size+' in view', cls: highCount>0?'alert':''},
+    {label:'Avg. farmgate price', value: d.length? '$'+fmt(priceAvg,0):'—', sub:'USD per tonne', cls:''},
+    {label:'Pest incidents reported', value: pestSum, sub:'sum across filtered records', cls: pestSum>150?'warn':''},
+    {label:'Avg. irrigation coverage', value: d.length? fmt(irrigAvg,0)+'%':'—', sub:'of crop area', cls: irrigAvg<30?'warn':''}
+  ];
+  cards.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'kpi-card '+c.cls;
+    div.setAttribute('role','listitem');
+    div.innerHTML = `<div class="kpi-label">${c.label}</div><div class="kpi-value mono">${c.value}</div><div class="kpi-delta">${c.sub}</div>`;
+    grid.appendChild(div);
+  });
+  document.getElementById('overviewDesc').textContent =
+    `Showing ${d.length} of ${RAW_DATA.length} records` + (d.length? `. Average risk score is ${fmt(riskAvg,1)} out of 100.` : ' — try widening your filters.');
+}
+
+// ---------- chart ----------
+let chart;
+function renderChart(){
+  const d = filtered();
+  const months = uniqueSorted('month');
+  const rainByMonth = months.map(m=>{
+    const rows = d.filter(r=>r.month===m);
+    return rows.length? avg(rows,'rainfall') : null;
+  });
+  const riskByMonth = months.map(m=>{
+    const rows = d.filter(r=>r.month===m);
+    return rows.length? avg(rows,'risk') : null;
+  });
+
+  const ctx = document.getElementById('trendChart');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: months,
+      datasets:[
+        {label:'Avg rainfall (mm)', data:rainByMonth, borderColor:'#2E5A3E', backgroundColor:'#2E5A3E', tension:.3, yAxisID:'y'},
+        {label:'Avg risk score (0-100)', data:riskByMonth, borderColor:'#8E2F22', backgroundColor:'#8E2F22', tension:.3, yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:12, font:{size:11.5}}} },
+      scales:{
+        y:{ position:'left', title:{display:true,text:'mm'}, grid:{color:'#E4E9DF'} },
+        y1:{ position:'right', title:{display:true,text:'risk (0-100)'}, min:0, max:100, grid:{drawOnChartArea:false} }
+      }
+    }
+  });
+
+  const alt = document.getElementById('trendChartAlt');
+  const lastIdx = rainByMonth.map((v,i)=>v!==null?i:-1).filter(i=>i>=0).pop();
+  if(lastIdx!==undefined){
+    alt.textContent = `Chart summary: from ${months[0]} to ${months[months.length-1]}, average rainfall moved from ${fmt(rainByMonth.find(v=>v!==null)||0,0)}mm to ${fmt(rainByMonth[lastIdx],0)}mm, while average risk score moved to ${fmt(riskByMonth[lastIdx],1)} out of 100.`;
+  }
+}
+
+// ---------- district grid ----------
+function renderDistricts(){
+  const d = filtered();
+  const grid = document.getElementById('districtGrid');
+  grid.innerHTML = '';
+  const byDistrict = {};
+  d.forEach(r=>{
+    if(!byDistrict[r.district]) byDistrict[r.district] = [];
+    byDistrict[r.district].push(r);
+  });
+  const entries = Object.entries(byDistrict).map(([name, rows])=>({
+    name, risk: avg(rows,'risk')
+  })).sort((a,b)=>b.risk-a.risk);
+
+  if(!entries.length){
+    grid.innerHTML = '<p style="grid-column:1/-1;color:var(--ink-soft);font-size:13.5px;">No districts match this filter.</p>';
+    return;
+  }
+
+  entries.forEach(e=>{
+    const band = e.risk>=60?'high':e.risk>=35?'medium':'low';
+    const tile = document.createElement('div');
+    tile.className = 'district-tile tile-'+band;
+    tile.setAttribute('role','listitem');
+    tile.setAttribute('tabindex','0');
+    tile.setAttribute('aria-label', e.name+', average risk score '+fmt(e.risk,0)+' out of 100, '+band+' band');
+    tile.innerHTML = `<span class="d-name">${e.name}</span><span class="d-risk mono">${fmt(e.risk,0)}</span>`;
+    grid.appendChild(tile);
+  });
+}
+
+// ---------- insights ----------
+function renderInsights(){
+  const d = filtered();
+  const list = document.getElementById('insightList');
+  list.innerHTML = '';
+  if(!d.length){
+    list.innerHTML = '<p style="color:var(--ink-soft);font-size:14px;">No records in the current filter — widen your selection to see insights.</p>';
+    return;
+  }
+
+  const byDistrict = {};
+  d.forEach(r=>{ (byDistrict[r.district] ??= []).push(r); });
+  const districtStats = Object.entries(byDistrict).map(([name,rows])=>({
+    name, risk: avg(rows,'risk'), rainfall: avg(rows,'rainfall'), pest: rows.reduce((s,r)=>s+r.pest,0), price: avg(rows,'price')
+  }));
+  districtStats.sort((a,b)=>b.risk-a.risk);
+  const topRisk = districtStats[0];
+
+  const byCrop = {};
+  d.forEach(r=>{ (byCrop[r.crop] ??= []).push(r); });
+  const cropStats = Object.entries(byCrop).map(([name,rows])=>({name, price: avg(rows,'price'), yieldT: avg(rows,'yield')}));
+  cropStats.sort((a,b)=>a.price-b.price);
+  const lowestPriceCrop = cropStats[0];
+  const highestYieldCrop = [...cropStats].sort((a,b)=>b.yieldT-a.yieldT)[0];
+
+  const lowIrrigation = [...d].sort((a,b)=>a.irrigation-b.irrigation)[0];
+  const highPest = [...districtStats].sort((a,b)=>b.pest-a.pest)[0];
+
+  const insights = [];
+
+  if(topRisk){
+    insights.push({
+      level: topRisk.risk>=60?'high':topRisk.risk>=35?'medium':'info',
+      tag:'Highest risk district',
+      text:`${topRisk.name} carries the highest average climate‑crop risk in view, at ${fmt(topRisk.risk,0)}/100, with average rainfall of ${fmt(topRisk.rainfall,0)}mm.`
+    });
+  }
+  if(highPest && highPest.pest>0){
+    insights.push({
+      level: highPest.pest>=40?'high':'medium',
+      tag:'Pest pressure',
+      text:`${highPest.name} reported the most pest incidents in view (${highPest.pest} total) — a candidate for a targeted extension visit.`
+    });
+  }
+  if(lowestPriceCrop){
+    insights.push({
+      level:'medium',
+      tag:'Weak farmgate price',
+      text:`${lowestPriceCrop.name} has the lowest average farmgate price in view, at $${fmt(lowestPriceCrop.price,0)} per tonne — worth flagging to farmer associations negotiating sales.`
+    });
+  }
+  if(lowIrrigation){
+    insights.push({
+      level: lowIrrigation.irrigation<25?'high':'info',
+      tag:'Irrigation gap',
+      text:`${lowIrrigation.district} (${lowIrrigation.crop}) shows the lowest irrigation coverage in view at ${fmt(lowIrrigation.irrigation,0)}%, raising exposure to rainfall shortfalls.`
+    });
+  }
+  if(highestYieldCrop){
+    insights.push({
+      level:'info',
+      tag:'Strongest performer',
+      text:`${highestYieldCrop.name} shows the strongest average yield in view (${fmt(highestYieldCrop.yieldT,1)} t/ha) — a reference point for input‑availability planning in weaker districts.`
+    });
+  }
+
+  insights.forEach(ins=>{
+    const card = document.createElement('div');
+    card.className = 'insight-card';
+    const iconChar = ins.level==='high'?'!':ins.level==='medium'?'~':'i';
+    card.innerHTML = `<span class="insight-icon ${ins.level}" aria-hidden="true">${iconChar}</span>
+      <div class="insight-body"><p class="insight-tag">${ins.tag}</p><p>${ins.text}</p></div>`;
+    list.appendChild(card);
+  });
+}
+
+// ---------- persona-aware recommended actions ----------
+const PERSONA_META = {
+  extension: {
+    title:'For: Agricultural Extension Officer',
+    sub:'Prioritising field visits and farmer advisories',
+    build: (d)=>{
+      const byDistrict = {};
+      d.forEach(r=>{ (byDistrict[r.district] ??= []).push(r); });
+      const ranked = Object.entries(byDistrict).map(([name,rows])=>({name, risk:avg(rows,'risk'), pest:rows.reduce((s,r)=>s+r.pest,0)})).sort((a,b)=>b.risk-a.risk).slice(0,3);
+      const actions = ranked.map(r=>`Schedule a field visit to ${r.name} this month — average risk score ${fmt(r.risk,0)}/100 and ${r.pest} pest incidents reported.`);
+      actions.push('Cross‑check input‑availability scores below 60 against the visit list before travelling, so seed and agrochemical gaps can be raised on‑site.');
+      actions.push("Log outcomes of each visit back into the district ledger so next month's risk trend reflects the intervention.");
+      return actions;
+    }
+  },
+  association: {
+    title:'For: Farmer Association Lead',
+    sub:'Coordinating input supply and sales leverage',
+    build:(d)=>{
+      const byCrop = {};
+      d.forEach(r=>{ (byCrop[r.crop] ??= []).push(r); });
+      const cropStats = Object.entries(byCrop).map(([name,rows])=>({name, price:avg(rows,'price'), input:avg(rows,'inputAvail')})).sort((a,b)=>a.price-b.price);
+      const actions = [];
+      if(cropStats[0]) actions.push(`Raise ${cropStats[0].name}'s weak farmgate price ($${fmt(cropStats[0].price,0)}/t) with buyers before the next selling window — members may need pooled bargaining.`);
+      const lowInput = [...cropStats].sort((a,b)=>a.input-b.input)[0];
+      if(lowInput) actions.push(`${lowInput.name} shows the lowest input‑availability score in view (${fmt(lowInput.input,0)}/100) — coordinate a bulk seed/fertiliser order for members growing it.`);
+      actions.push("Share this month's district risk ledger with member WhatsApp groups so farmers in high‑risk areas can adjust planting or harvesting timing.");
+      return actions;
+    }
+  },
+  planner: {
+    title:'For: Food Security Planner',
+    sub:'Monitoring supply risk across districts',
+    build:(d)=>{
+      const highRiskDistricts = new Set(d.filter(r=>r.riskLevel==='High').map(r=>r.district));
+      const actions = [];
+      actions.push(`${highRiskDistricts.size} district(s) are currently in the High risk band in this view — prioritise these for stock and price monitoring this month.`);
+      const yieldAvg = avg(d,'yield');
+      actions.push(`Average estimated yield across the current filter is ${fmt(yieldAvg,1)} t/ha — compare against the 3‑month trend to flag early supply shortfalls.`);
+      actions.push('Cross‑reference high‑risk districts against irrigation coverage below 30% to identify where drought contingency stock should be pre‑positioned.');
+      return actions;
+    }
+  }
+};
+
+function renderActions(){
+  const d = filtered();
+  const meta = PERSONA_META[state.persona];
+  document.getElementById('actions-persona-title').textContent = meta.title;
+  document.getElementById('actions-persona-sub').textContent = meta.sub;
+  const list = document.getElementById('actionList');
+  list.innerHTML = '';
+  const actions = meta.build(d.length? d : RAW_DATA);
+  actions.forEach((a,i)=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="action-num mono">${String(i+1).padStart(2,'0')}</span><span>${a}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function render(){
+  renderKpis();
+  renderChart();
+  renderDistricts();
+  renderInsights();
+  renderActions();
+}
+
+render();
+</script>
+</body>
+</html>
